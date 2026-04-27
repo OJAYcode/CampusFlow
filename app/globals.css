@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@source "../src";
+@source "../components";
+@source "../app";
+@source "../apps";
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
