@@ -109,7 +109,8 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
       <button
         type="button"
         onClick={() => setIsCollapsed(false)}
-        className="fixed bottom-4 right-4 z-[120] inline-flex items-center gap-2 rounded-full bg-[#255ac8] px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_54px_rgba(37,90,200,0.22)] transition hover:bg-[#1d4eb1]"
+        className="pointer-events-auto fixed bottom-4 right-4 z-[9999] inline-flex items-center gap-2 rounded-full bg-[#255ac8] px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_54px_rgba(37,90,200,0.22)] transition hover:bg-[#1d4eb1]"
+        style={{ touchAction: "manipulation" }}
       >
         <Download className="h-4 w-4" />
         Install app
@@ -118,8 +119,11 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
   }
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-[120] sm:inset-x-auto sm:right-5 sm:w-[22rem]">
-      <div className="rounded-[24px] border border-[#d8e4fb] bg-white p-4 shadow-[0_24px_54px_rgba(37,90,200,0.18)]">
+    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[9999] sm:inset-x-auto sm:right-5 sm:w-[22rem]">
+      <div
+        className="pointer-events-auto rounded-[24px] border border-[#d8e4fb] bg-white p-4 shadow-[0_24px_54px_rgba(37,90,200,0.18)]"
+        style={{ touchAction: "manipulation" }}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#eef3ff] text-[#255ac8]">
