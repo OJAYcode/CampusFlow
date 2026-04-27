@@ -11,8 +11,8 @@
     "dev:student": "npm --prefix apps/student-portal run dev",
     "dev:staff": "npm --prefix apps/staff-portal run dev",
     "build": "next build",
-    "build:student": "npm --prefix apps/student-portal run build",
-    "build:staff": "npm --prefix apps/staff-portal run build",
+    "build:student": "node ./node_modules/next/dist/bin/next build ./apps/student-portal",
+    "build:staff": "node ./node_modules/next/dist/bin/next build ./apps/staff-portal",
     "start": "next start",
     "lint": "next lint",
     "test": "node --test --experimental-strip-types \"tests/*.test.ts\""
