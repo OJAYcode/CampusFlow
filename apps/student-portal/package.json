@@ -1,6 +1,11 @@
 {
   "name": "campusflow-student-portal",
   "private": true,
+  "dependencies": {
+    "next": "^15.5.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
   "scripts": {
     "dev": "node ../../node_modules/next/dist/bin/next dev -p 3000",
     "prebuild": "npm install --prefix ../..",
