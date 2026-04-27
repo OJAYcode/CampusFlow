@@ -3,8 +3,35 @@ import axios from "axios";
 import { clearStoredSession, getStoredSession, setStoredSession } from "@/src/utils/session-storage";
 import { getSessionExpiredRedirect } from "@/src/utils/auth-routing";
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:10000/api/v1";
+function normalizeApiBaseUrl(value?: string) {
+  const fallback = "http://localhost:10000/api/v1";
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) return fallback;
+
+  const trimmed = rawValue.replace(/\/+$/, "");
+
+  try {
+    const parsed = new URL(trimmed);
+    const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+
+    if (!normalizedPath || normalizedPath === "/") {
+      parsed.pathname = "/api/v1";
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    if (normalizedPath === "/api/v1") {
+      parsed.pathname = "/api/v1";
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    return trimmed;
+  } catch {
+    return trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  }
+}
+
+const baseURL = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL);
 
 let refreshPromise: Promise<string | null> | null = null;
 
