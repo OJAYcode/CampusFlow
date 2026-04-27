@@ -9,6 +9,14 @@ const nextConfig = {
   experimental: {
     externalDir: true,
   },
+  webpack(config) {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@": path.join(__dirname, "../.."),
+    };
+
+    return config;
+  },
   env: {
     NEXT_PUBLIC_API_BASE_URL:
       process.env.NEXT_PUBLIC_API_BASE_URL ||
