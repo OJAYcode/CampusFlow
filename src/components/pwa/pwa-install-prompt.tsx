@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Smartphone, X } from "lucide-react";
+import { ChevronUp, Download, Smartphone, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
@@ -25,33 +25,26 @@ function isIosBrowser() {
   return /iphone|ipad|ipod/.test(userAgent);
 }
 
-function getDismissKey(portal: "student" | "staff") {
-  return `campusflow:pwa-dismissed:${portal}`;
-}
-
 export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [dismissed, setDismissed] = useState(true);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setDismissed(window.localStorage.getItem(getDismissKey(portal)) === "1");
     setIsInstalled(isStandaloneDisplayMode());
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as BeforeInstallPromptEvent);
-      setDismissed(window.localStorage.getItem(getDismissKey(portal)) === "1");
+      setIsCollapsed(false);
     };
 
     const onInstalled = () => {
       setInstallEvent(null);
-      setDismissed(true);
       setIsInstalled(true);
-      window.localStorage.setItem(getDismissKey(portal), "1");
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
@@ -63,8 +56,8 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
     };
   }, [portal]);
 
-  const canInstall = Boolean(installEvent) && !dismissed && !isInstalled;
-  const showIosHint = isIosBrowser() && !isInstalled && !dismissed;
+  const canInstall = Boolean(installEvent) && !isInstalled;
+  const showIosHint = isIosBrowser() && !isInstalled;
 
   const copy = useMemo(
     () =>
@@ -80,6 +73,18 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
     [portal],
   );
 
+  const installHint = useMemo(() => {
+    if (showIosHint) {
+      return "Open Share and choose Add to Home Screen.";
+    }
+
+    if (canInstall) {
+      return "Install it once for faster access and launcher shortcuts.";
+    }
+
+    return "If your browser does not show the install popup yet, open the browser menu and choose Install app or Add to Home Screen.";
+  }, [canInstall, showIosHint]);
+
   async function handleInstall() {
     if (!installEvent) return;
 
@@ -89,10 +94,7 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
       await installEvent.prompt();
       const choice = await installEvent.userChoice;
       if (choice.outcome !== "accepted") {
-        setDismissed(true);
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(getDismissKey(portal), "1");
-        }
+        setIsCollapsed(false);
       }
     } finally {
       setIsInstalling(false);
@@ -100,14 +102,20 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
     }
   }
 
-  function handleDismiss() {
-    setDismissed(true);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(getDismissKey(portal), "1");
-    }
-  }
+  if (isInstalled) return null;
 
-  if (!canInstall && !showIosHint) return null;
+  if (isCollapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsCollapsed(false)}
+        className="fixed bottom-4 right-4 z-[120] inline-flex items-center gap-2 rounded-full bg-[#255ac8] px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_54px_rgba(37,90,200,0.22)] transition hover:bg-[#1d4eb1]"
+      >
+        <Download className="h-4 w-4" />
+        Install app
+      </button>
+    );
+  }
 
   return (
     <div className="fixed inset-x-4 bottom-4 z-[120] sm:inset-x-auto sm:right-5 sm:w-[22rem]">
@@ -120,20 +128,19 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
             <div>
               <p className="text-sm font-semibold text-[#243257]">{copy.title}</p>
               <p className="mt-1 text-sm leading-6 text-[#5f6b86]">
-                {showIosHint
-                  ? `${copy.body} On iPhone or iPad, use Share > Add to Home Screen.`
-                  : copy.body}
+                {copy.body}
               </p>
+              <p className="mt-2 text-xs leading-5 text-[#7a88a5]">{installHint}</p>
             </div>
           </div>
 
           <button
             type="button"
-            aria-label="Dismiss install prompt"
-            onClick={handleDismiss}
+            aria-label="Collapse install prompt"
+            onClick={() => setIsCollapsed(true)}
             className="rounded-full p-1.5 text-[#7a88a5] transition hover:bg-[#f4f7ff] hover:text-[#243257]"
           >
-            <X className="h-4 w-4" />
+            <ChevronUp className="h-4 w-4" />
           </button>
         </div>
 
@@ -141,18 +148,31 @@ export function PwaInstallPrompt({ portal }: { portal: "student" | "staff" }) {
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
-              onClick={handleInstall}
-              disabled={isInstalling}
+              onClick={canInstall ? handleInstall : () => undefined}
+              disabled={isInstalling || !canInstall}
               className="inline-flex items-center justify-center rounded-full bg-[#255ac8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4eb1] disabled:cursor-not-allowed disabled:bg-[#90aee7]"
             >
               {isInstalling ? "Preparing..." : "Install app"}
             </button>
             <button
               type="button"
-              onClick={handleDismiss}
+              onClick={() => setIsCollapsed(true)}
               className="inline-flex items-center justify-center rounded-full border border-[#d8e4fb] px-4 py-2.5 text-sm font-semibold text-[#4e5e80] transition hover:bg-[#f7f9ff]"
             >
-              Not now
+              Later
+            </button>
+          </div>
+        ) : null}
+
+        {showIosHint ? (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-[#60708f]">Safari requires manual install.</span>
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(true)}
+              className="inline-flex items-center justify-center rounded-full border border-[#d8e4fb] px-4 py-2.5 text-sm font-semibold text-[#4e5e80] transition hover:bg-[#f7f9ff]"
+            >
+              Close
             </button>
           </div>
         ) : null}

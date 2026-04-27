@@ -4,6 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
+  Download,
   Eye,
   EyeOff,
   Lock,
@@ -180,14 +181,14 @@ function AuthCanvas({
           : "Secure Access";
 
   return (
-    <main className="totc-shell relative min-h-screen overflow-hidden px-4 py-8 sm:px-6">
+    <main className="totc-shell relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 sm:py-12">
       <div className="pointer-events-none absolute inset-0 bg-[url('/images/campus-auth.jpg')] bg-cover bg-center" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(14,20,56,0.34)_0%,rgba(34,44,112,0.28)_45%,rgba(20,27,77,0.4)_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_16%_8%,rgba(126,142,255,0.14),transparent_38%),radial-gradient(circle_at_84%_0%,rgba(47,50,125,0.16),transparent_34%)]" />
       <div className="pointer-events-none absolute -left-24 top-12 h-72 w-72 rounded-full bg-[#3d42a8]/14 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-8 h-72 w-72 rounded-full bg-[#2f327d]/10 blur-3xl" />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[620px] items-center justify-center">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-[620px] items-start justify-center pt-3 sm:min-h-[calc(100vh-6rem)] sm:items-center sm:pt-0">
         <motion.div
           className="w-full"
           initial={{ opacity: 0, y: 18, scale: 0.988 }}
@@ -215,6 +216,10 @@ function AuthCanvas({
                     <p className="max-w-[28rem] text-[14px] leading-[1.7] text-[#696984] sm:text-[15px]">
                       {description}
                     </p>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#dbe6fa] bg-[#f7f9ff] px-3 py-1.5 text-[11px] font-medium text-[#4e5e80]">
+                      <Download className="h-3.5 w-3.5 text-[#255ac8]" />
+                      Install app from the floating button after the page loads.
+                    </div>
                   </div>
                 </div>
 
