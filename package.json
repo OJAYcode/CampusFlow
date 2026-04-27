@@ -2,6 +2,10 @@
   "name": "campusflow-frontend",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/student-portal",
+    "apps/staff-portal"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:student": "npm --prefix apps/student-portal run dev",
