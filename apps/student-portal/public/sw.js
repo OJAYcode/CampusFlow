@@ -1,5 +1,5 @@
-const CACHE_NAME = "campusflow-student-v3";
-const STATIC_ASSETS = ["/manifest.webmanifest", "/icons/pwa-192.svg", "/icons/pwa-512.svg"];
+const CACHE_NAME = "campusflow-student-v4";
+const STATIC_ASSETS = ["/manifest.webmanifest", "/icons/pwa-192.png", "/icons/pwa-512.png"];
 
 const isStaticAsset = (url) =>
   url.origin === self.location.origin &&

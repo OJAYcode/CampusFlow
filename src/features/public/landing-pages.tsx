@@ -558,10 +558,10 @@ function FooterSection({
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10">
         <div className="grid gap-10 lg:grid-cols-[0.62fr_0.38fr]">
           <div className="space-y-6">
-            <div className="flex items-center gap-5">
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
               <BrandLogo invert portal={portal} />
-              <div className="h-14 w-px bg-white/20" />
-              <p className="max-w-[10rem] text-[15px] leading-6 text-white/75">
+              <div className="hidden h-14 w-px bg-white/20 sm:block" />
+              <p className="max-w-[18rem] text-[15px] leading-6 text-white/75 sm:max-w-[10rem]">
                 Smart attendance and e-learning management
               </p>
             </div>
@@ -571,13 +571,13 @@ function FooterSection({
             </p>
 
             <div className="flex max-w-[34rem] flex-col gap-3 sm:flex-row">
-              <div className="flex h-14 flex-1 items-center gap-3 rounded-full border border-white/18 px-5 text-white/68">
+              <div className="flex h-14 w-full flex-1 items-center gap-3 rounded-full border border-white/18 px-5 text-white/68">
                 <Mail className="h-4 w-4" />
                 <span className="text-sm">Your Email</span>
               </div>
               <button
                 type="button"
-                className="rounded-full bg-[#255ac8] px-7 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f66d1]"
+                className="w-full rounded-full bg-[#255ac8] px-7 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f66d1] sm:w-auto"
               >
                 Subscribe
               </button>
@@ -594,20 +594,20 @@ function FooterSection({
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href={primaryHref}
-                className="inline-flex items-center justify-center rounded-full bg-[#255ac8] px-7 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f66d1]"
+                className="inline-flex w-full items-center justify-center rounded-full bg-[#255ac8] px-7 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f66d1] sm:w-auto"
               >
                 {primaryLabel}
               </Link>
               <Link
                 href={secondaryHref}
-                className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-[#2f327d] transition hover:bg-white/92"
+                className="inline-flex w-full items-center justify-center rounded-full bg-white px-7 py-3.5 text-base font-semibold text-[#2f327d] transition hover:bg-white/92 sm:w-auto"
               >
                 {secondaryLabel}
               </Link>
             </div>
 
             <div className="pt-6 text-sm text-white/58">
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                 <span>Careers</span>
                 <span>Privacy Policy</span>
                 <span>Terms & Conditions</span>
