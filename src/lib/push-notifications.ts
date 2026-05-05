@@ -15,16 +15,9 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export async function registerPortalServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
-
-  const isLocalDev =
-    process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
-
-  if (isLocalDev) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-    return null;
-  }
-
+  const secureContext =
+    window.isSecureContext || ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (!secureContext) return null;
   return navigator.serviceWorker.register("/sw.js");
 }
 

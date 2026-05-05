@@ -2,17 +2,13 @@
 
 import { useEffect } from "react";
 
-import { PwaInstallPrompt } from "@/src/components/pwa/pwa-install-prompt";
+import { PortalPwaInstall } from "@/src/components/pwa/portal-pwa-install";
 import { useAuthStore } from "@/src/store/auth-store";
 import { registerPortalServiceWorker, syncPushSubscription } from "@/src/lib/push-notifications";
 
 export function PwaBootstrap({ portal }: { portal: "student" | "staff" }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const role = useAuthStore((state) => state.role);
-
-  useEffect(() => {
-    registerPortalServiceWorker().catch(() => undefined);
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -23,5 +19,5 @@ export function PwaBootstrap({ portal }: { portal: "student" | "staff" }) {
     syncPushSubscription(portal).catch(() => undefined);
   }, [isAuthenticated, portal, role]);
 
-  return <PwaInstallPrompt portal={portal} />;
+  return <PortalPwaInstall portal={portal} />;
 }

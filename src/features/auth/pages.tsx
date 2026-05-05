@@ -197,10 +197,10 @@ function AuthCanvas({
         >
           <Card className="relative w-full overflow-hidden rounded-[34px] border border-white/60 bg-white/84 shadow-[0_36px_86px_rgba(47,50,125,0.16)] backdrop-blur-xl">
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#8a9af5]/70 to-transparent" />
-            <CardContent className="p-6 sm:p-8 lg:p-9">
+            <CardContent className="px-6 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-9 lg:px-9 lg:pb-9 lg:pt-10">
               <div className="space-y-7">
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
                     <span className="rounded-full bg-[#fff2e1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f48c06]">
                       {accessLabel}
                     </span>
