@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
 import { AppProviders } from "@/src/components/providers/app-providers";
+import { DevServiceWorkerResetScript } from "@/src/components/pwa/dev-sw-reset-script";
 import { PwaBootstrap } from "@/src/components/pwa/pwa-bootstrap";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={plusJakartaSans.variable}>
+        <DevServiceWorkerResetScript />
         <AppProviders>{children}</AppProviders>
         <PwaBootstrap portal="student" />
       </body>

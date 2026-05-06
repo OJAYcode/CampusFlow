@@ -3,7 +3,7 @@
 import { ChevronUp, Download, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { registerPortalServiceWorker } from "@/src/lib/push-notifications";
+import { isPortalPwaRuntimeEnabled, registerPortalServiceWorker } from "@/src/lib/push-notifications";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -29,6 +29,8 @@ function isIosBrowser() {
 
 function supportsSecurePwaContext() {
   if (typeof window === "undefined") return false;
+
+  if (!isPortalPwaRuntimeEnabled()) return false;
 
   if (window.isSecureContext) return true;
 

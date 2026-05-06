@@ -13,8 +13,36 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+function isLocalDevHost() {
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1"].includes(window.location.hostname);
+}
+
+export function isPortalPwaRuntimeEnabled() {
+  if (typeof window === "undefined") return false;
+  return !isLocalDevHost();
+}
+
+async function clearDevPortalServiceWorkers() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if (!("caches" in window)) return;
+
+  const cacheKeys = await window.caches.keys();
+  await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
+}
+
 export async function registerPortalServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+
+  if (isLocalDevHost()) {
+    await clearDevPortalServiceWorkers();
+    return null;
+  }
+
   const secureContext =
     window.isSecureContext || ["localhost", "127.0.0.1"].includes(window.location.hostname);
   if (!secureContext) return null;

@@ -1,0 +1,24 @@
+{
+  "name": "CampusFlow Staff Portal",
+  "short_name": "CampusFlow Staff",
+  "description": "Lecturer workspace for attendance, materials, assignments, assessments, and announcements.",
+  "start_url": "/staff/lecturer",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#255ac8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
