@@ -1,11 +1,11 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
 import { LogOut, User2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 type SidebarIcon = React.ComponentType<{ className?: string }>;
@@ -58,7 +59,7 @@ export function AppSidebar({
   className,
   ...props
 }: AppSidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const isMobile = useIsMobile();
 
   const isActive = React.useCallback(

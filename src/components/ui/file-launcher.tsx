@@ -1,11 +1,12 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
 import mammoth from "mammoth";
 import { AlertCircle, ExternalLink, Eye, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/src/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
 import { resolveFileUrl } from "@/src/utils/files";
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"]);

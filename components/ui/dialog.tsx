@@ -1,7 +1,8 @@
 "use client";
 
-import * as React from "react";
+/* eslint-disable simple-import-sort/imports */
 import { X } from "lucide-react";
+import * as React from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";

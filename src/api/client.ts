@@ -1,7 +1,8 @@
+/* eslint-disable simple-import-sort/imports */
 import axios from "axios";
 
-import { clearStoredSession, getStoredSession, setStoredSession } from "@/src/utils/session-storage";
 import { getSessionExpiredRedirect } from "@/src/utils/auth-routing";
+import { clearStoredSession, getStoredSession, setStoredSession } from "@/src/utils/session-storage";
 
 function normalizeApiBaseUrl(value?: string) {
   const fallback = "http://localhost:10000/api/v1";

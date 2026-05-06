@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Download, GraduationCap, LocateFixed, MapPinned, Plus, Radar, TimerReset, Users } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -18,7 +19,7 @@ import { Input } from "@/src/components/ui/input";
 import { PageIntro } from "@/src/components/ui/page-intro";
 import { StatCard } from "@/src/components/ui/stat-card";
 import type { AttendanceStudentPoint } from "@/src/components/ui/attendance-geofence-map";
-import type { ApiEnvelope, AttendanceSession, AttendanceSessionLiveView, Course, CourseAttendancePercentageReport } from "@/src/types/domain";
+import type { ApiEnvelope, AttendanceSessionLiveView, Course } from "@/src/types/domain";
 import { downloadBlob, getFilenameFromDisposition } from "@/src/utils/download";
 import { getErrorMessage } from "@/src/utils/error";
 import { formatDate } from "@/src/utils/format";

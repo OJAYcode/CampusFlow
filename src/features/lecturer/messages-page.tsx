@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+/* eslint-disable simple-import-sort/imports */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, MessageSquare, SendHorizontal, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { communicationApi } from "@/src/api/communication";

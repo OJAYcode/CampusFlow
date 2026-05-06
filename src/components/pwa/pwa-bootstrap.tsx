@@ -1,10 +1,11 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
 import { useEffect } from "react";
 
 import { PortalPwaInstall } from "@/src/components/pwa/portal-pwa-install";
+import { syncPushSubscription } from "@/src/lib/push-notifications";
 import { useAuthStore } from "@/src/store/auth-store";
-import { registerPortalServiceWorker, syncPushSubscription } from "@/src/lib/push-notifications";
 
 export function PwaBootstrap({ portal }: { portal: "student" | "staff" }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

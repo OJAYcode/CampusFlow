@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BookOpen, ClipboardCheck, FileText, GraduationCap, MessageSquare, Plus, SendHorizontal, Trash2, Upload, Users } from "lucide-react";
 import Link from "next/link";
@@ -7,7 +8,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { LecturerAttendancePage as DedicatedLecturerAttendancePage } from "@/src/features/lecturer/attendance-page";
 import { communicationApi } from "@/src/api/communication";
 import { lecturerApi } from "@/src/api/lecturer";
 import { Alert } from "@/src/components/ui/alert";
@@ -20,13 +20,14 @@ import { PageIntro } from "@/src/components/ui/page-intro";
 import { Pagination } from "@/src/components/ui/pagination";
 import { StatCard } from "@/src/components/ui/stat-card";
 import { Textarea } from "@/src/components/ui/textarea";
+import { LecturerAttendancePage as DedicatedLecturerAttendancePage } from "@/src/features/lecturer/attendance-page";
 import { requestPushNotifications } from "@/src/lib/push-notifications";
 import { useAuthStore } from "@/src/store/auth-store";
 import { getErrorMessage } from "@/src/utils/error";
 import { formatDate, formatFileSize } from "@/src/utils/format";
 
-function getCourseBasePath(pathname: string) {
-  return pathname.startsWith("/staff/lecturer") ? "/staff/lecturer/courses" : "/lecturer/courses";
+function getCourseBasePath(pathname: string | null) {
+  return (pathname ?? "").startsWith("/staff/lecturer") ? "/staff/lecturer/courses" : "/lecturer/courses";
 }
 
 function toDateTimeLocalInput(value?: string | null) {
@@ -68,7 +69,7 @@ function LecturerCourseSelect({
 }
 
 function LecturerDashboardContent() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const user = useAuthStore((state) => state.user);
   const coursesQuery = useQuery({
     queryKey: ["lecturer", "courses"],
@@ -157,7 +158,7 @@ function LecturerCoursesContent() {
     queryKey: ["lecturer", "courses"],
     queryFn: lecturerApi.courses,
   });
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const courses = coursesQuery.data?.data || [];
   const courseBasePath = getCourseBasePath(pathname);
 
@@ -205,7 +206,7 @@ function LecturerCoursesContent() {
 }
 
 function LecturerCourseWorkspaceContent({ courseId }: { courseId?: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const coursesQuery = useQuery({
     queryKey: ["lecturer", "courses"],
     queryFn: lecturerApi.courses,
@@ -289,7 +290,7 @@ function LecturerCourseWorkspaceContent({ courseId }: { courseId?: string }) {
 }
 
 function LecturerCourseReportPage({ courseId }: { courseId?: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const coursesQuery = useQuery({
     queryKey: ["lecturer", "courses"],
     queryFn: lecturerApi.courses,
@@ -375,7 +376,7 @@ export function LecturerReportsPage({ courseId }: { courseId?: string }) {
 
 export function LecturerMaterialsPage() {
   const queryClient = useQueryClient();
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const coursesQuery = useQuery({
     queryKey: ["lecturer", "courses"],
     queryFn: lecturerApi.courses,

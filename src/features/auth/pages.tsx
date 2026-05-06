@@ -791,7 +791,7 @@ export function ForgotPasswordPage() {
 
 export function ResetPasswordPage() {
   const searchParams = useSearchParams();
-  const initialToken = searchParams.get("token") || "";
+  const initialToken = searchParams?.get("token") || "";
   const theme = getAuthTheme("generic");
   const [showNewPassword, setShowNewPassword] = useState(false);
 
