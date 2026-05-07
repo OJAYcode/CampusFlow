@@ -4,8 +4,6 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
 import { AppProviders } from "@/src/components/providers/app-providers";
-import { DevServiceWorkerResetScript } from "@/src/components/pwa/dev-sw-reset-script";
-import { PwaBootstrap } from "@/src/components/pwa/pwa-bootstrap";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -20,7 +18,6 @@ export const metadata: Metadata = {
     template: "%s | CampusFlow Staff Portal",
   },
   description: "CampusFlow staff portal for lecturer workspaces, administration, and academic operations.",
-  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -31,9 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={plusJakartaSans.variable}>
-        <DevServiceWorkerResetScript />
         <AppProviders>{children}</AppProviders>
-        <PwaBootstrap portal="staff" />
       </body>
     </html>
   );
