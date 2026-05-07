@@ -71,8 +71,7 @@ export function StudentDashboardPage() {
     <div className="space-y-6">
       {!isMobile && (
         <Card className="hidden md:block">
-        )}
-        <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="heading-kicker">Student dashboard</p>
             <CardTitle className="mt-2">Welcome back, {firstName}</CardTitle>
@@ -105,8 +104,9 @@ export function StudentDashboardPage() {
                 : "No attendance sessions are open right now."}
             </p>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={GraduationCap} title="Enrolled courses" value={enrollments.data?.data.length || 0} tone="danger" />
@@ -116,7 +116,8 @@ export function StudentDashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
+        {!isMobile && (
+          <Card className="hidden md:block">
           <CardHeader>
             <CardTitle>Academic snapshot</CardTitle>
             <CardDescription>Your record and quick actions for the day.</CardDescription>
@@ -142,6 +143,7 @@ export function StudentDashboardPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         <Card>
           <CardHeader>
