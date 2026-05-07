@@ -670,6 +670,7 @@ export function StudentAssignmentsPage() {
 
 export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: string }) {
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [files, setFiles] = useState<File[]>([]);
   const [submissionText, setSubmissionText] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
