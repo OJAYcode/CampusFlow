@@ -14,6 +14,8 @@ import { studentApi } from "@/src/api/student";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRobustUserLocation } from "@/lib/geolocation";
 import { requestPushNotifications } from "@/src/lib/push-notifications";
+
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Alert } from "@/src/components/ui/alert";
 import { Badge } from "@/src/components/ui/badge";
 import { Breadcrumb } from "@/src/components/ui/breadcrumb";
@@ -51,6 +53,7 @@ function LabeledField({
 }
 
 export function StudentDashboardPage() {
+  const isMobile = useIsMobile();
   const profile = useQuery({ queryKey: ["student", "profile"], queryFn: studentApi.profile });
   const enrollments = useQuery({ queryKey: ["student", "enrollments"], queryFn: studentApi.enrollments });
   const electives = useQuery({ queryKey: ["student", "electives"], queryFn: studentApi.electives });
@@ -66,7 +69,9 @@ export function StudentDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="hidden md:block">
+      {!isMobile && (
+        <Card className="hidden md:block">
+        )}
         <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="heading-kicker">Student dashboard</p>
@@ -696,7 +701,9 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
         }
       />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-      <Card className="hidden md:block">
+        {!isMobile && (
+          <Card className="hidden md:block">
+        )}
         <CardHeader>
           <CardTitle>{assignment.data?.data.title || "Assignment detail"}</CardTitle>
           <CardDescription>{assignment.data?.data.course?.title}</CardDescription>
