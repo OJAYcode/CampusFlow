@@ -66,7 +66,7 @@ export function StudentDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="hidden md:block">
         <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="heading-kicker">Student dashboard</p>
@@ -696,7 +696,7 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
         }
       />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-      <Card>
+      <Card className="hidden md:block">
         <CardHeader>
           <CardTitle>{assignment.data?.data.title || "Assignment detail"}</CardTitle>
           <CardDescription>{assignment.data?.data.course?.title}</CardDescription>
