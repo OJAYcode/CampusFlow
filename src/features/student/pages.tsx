@@ -705,7 +705,6 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
         {!isMobile && (
           <Card className="hidden md:block">
-        )}
         <CardHeader>
           <CardTitle>{assignment.data?.data.title || "Assignment detail"}</CardTitle>
           <CardDescription>{assignment.data?.data.course?.title}</CardDescription>
@@ -713,8 +712,9 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
         <CardContent className="space-y-4">
           <p className="text-sm leading-7 text-slate-600">{assignment.data?.data.description || "No description provided."}</p>
           <Alert variant="info">Due {formatDate(assignment.data?.data.dueDate, true)}</Alert>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Submit work</CardTitle>
