@@ -1774,41 +1774,70 @@ export function StudentAnnouncementsPage() {
   useEffect(() => {
     if (!notificationsEnabled) return;
 
-    let lastIds = new Set((data?.data || []).map((a) => a._id));
+    let es: EventSource | null = null;
+    let pollId: number | null = null;
+    const { accessToken } = getStoredSession();
 
-    const checkNew = async () => {
+    const handleAnnouncement = (a: any) => {
+      const title = a.title || "New announcement";
+      const body = a.body ? (a.body.length > 120 ? a.body.slice(0, 117) + "..." : a.body) : "";
       try {
-        const res = await studentApi.announcements();
-        const anns = res.data || [];
-        const newOnes = anns.filter((a) => !lastIds.has(a._id));
-        if (newOnes.length) {
-          newOnes.forEach((a) => {
-            const title = a.title || "New announcement";
-            const body = a.body ? (a.body.length > 120 ? a.body.slice(0, 117) + "..." : a.body) : "";
-            try {
-              if (Notification.permission === "granted") {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                new Notification(title, { body });
-              }
-            } catch (e) {}
-            toast.success(`Announcement: ${title}`);
-          });
-          lastIds = new Set(anns.map((a) => a._id));
-          // refresh cache so UI reflects new announcements
-          queryClient.invalidateQueries({ queryKey: ["student", "announcements"] });
+        if (Notification.permission === "granted") {
+          // @ts-ignore
+          new Notification(title, { body });
         }
-      } catch (e) {
-        // ignore polling errors
-      }
+      } catch (e) {}
+      toast.success(`Announcement: ${title}`);
+      queryClient.invalidateQueries({ queryKey: ["student", "announcements"] });
     };
 
-    const id = window.setInterval(checkNew, 30000);
-    // run one immediate check
-    void checkNew();
+    // Prefer SSE if available and we have an access token
+    if (typeof window !== "undefined" && typeof EventSource !== "undefined" && accessToken) {
+      try {
+        const url = `${apiClient.defaults.baseURL}/notifications/stream?token=${encodeURIComponent(accessToken)}`;
+        es = new EventSource(url);
+        es.addEventListener("announcement", (ev: MessageEvent) => {
+          try {
+            const payload = JSON.parse(ev.data);
+            handleAnnouncement(payload);
+          } catch (e) {}
+        });
+        es.addEventListener("heartbeat", () => {});
+        es.onerror = () => {
+          try {
+            es?.close();
+          } catch {}
+          es = null;
+        };
+      } catch (e) {
+        es = null;
+      }
+    }
+
+    // fallback to polling if SSE unavailable
+    if (!es) {
+      let lastIds = new Set((data?.data || []).map((a) => a._id));
+      const checkNew = async () => {
+        try {
+          const res = await studentApi.announcements();
+          const anns = res.data || [];
+          const newOnes = anns.filter((a) => !lastIds.has(a._id));
+          if (newOnes.length) {
+            newOnes.forEach(handleAnnouncement);
+            lastIds = new Set(anns.map((a) => a._id));
+          }
+        } catch (e) {}
+      };
+
+      pollId = window.setInterval(checkNew, 10000);
+      void checkNew();
+    }
 
     return () => {
-      clearInterval(id);
+      try {
+        if (es) es.close();
+      } catch {}
+      if (pollId) clearInterval(pollId);
     };
   }, [notificationsEnabled]);
 
