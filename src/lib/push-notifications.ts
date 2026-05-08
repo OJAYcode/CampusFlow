@@ -2,7 +2,6 @@
 // These functions are kept as stubs to prevent breaking imports
 
 import { apiClient } from "@/src/api/client";
-import { getStoredSession } from "@/src/utils/session-storage";
 
 export function isPortalPwaRuntimeEnabled() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && !!window.location;
@@ -31,7 +30,9 @@ export async function registerPortalServiceWorker() {
 export async function syncPushSubscription(portal: "student" | "staff") {
   // Fetch server public key
   try {
-    const res = await fetch(`${apiClient.defaults.baseURL.replace(/\/api\/v1$/, '')}/api/v1/notifications/push/public-config`);
+    const baseUrl = apiClient.defaults.baseURL ?? "";
+    const origin = baseUrl ? baseUrl.replace(/\/api\/v1$/, "") : "";
+    const res = await fetch(`${origin}/api/v1/notifications/push/public-config`);
     const cfg = await res.json();
     if (!cfg?.data?.enabled) return { enabled: false, reason: 'push_not_configured' };
     return { enabled: true, publicKey: cfg.data.publicKey };
