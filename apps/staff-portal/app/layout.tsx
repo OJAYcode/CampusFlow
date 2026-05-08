@@ -18,6 +18,7 @@ export const metadata: Metadata = {
     template: "%s | CampusFlow Staff Portal",
   },
   description: "CampusFlow staff portal for lecturer workspaces, administration, and academic operations.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
