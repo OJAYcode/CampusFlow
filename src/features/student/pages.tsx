@@ -486,16 +486,14 @@ export function StudentMaterialsPage() {
         title="Learning resources"
         description="Browse your course files and search public references by title."
       />
-      <PageControlCard>
-        <div className="pt-1">
-          <Input
-            className="sm:h-10"
-            placeholder="Search course files or a public title"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-      </PageControlCard>
+      <div className="pt-1">
+        <Input
+          className="sm:h-10"
+          placeholder="Search course files or a public title"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </div>
 
       <div className="space-y-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
