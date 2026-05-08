@@ -487,36 +487,13 @@ export function StudentMaterialsPage() {
         description="Browse your course files and search public references by title."
       />
       <PageControlCard>
-        <div className="grid gap-4 pt-1 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-          <div className="space-y-2.5">
-            <Input
-              className="sm:h-10"
-              placeholder="Search course files or a public title"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <p className="text-sm leading-6 text-[#667085]">
-              Shows files from your approved courses. The same search checks public references.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[18px] border border-[rgba(37,90,200,0.1)] bg-[#f7f9fc] px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b95a7]">Course materials</p>
-              <p className="mt-2 text-lg font-semibold text-[#202c4b]">
-                {filtered.length} resource{filtered.length === 1 ? "" : "s"}
-              </p>
-            </div>
-            <div className="rounded-[18px] border border-[rgba(37,90,200,0.1)] bg-[#f7f9fc] px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b95a7]">Online search</p>
-              <p className="mt-2 text-lg font-semibold text-[#202c4b]">
-                {!shouldSearchOnline
-                  ? "Type 2+ chars"
-                  : onlineResultsQuery.isFetching
-                    ? "Searching..."
-                    : `${onlineResults.length} match${onlineResults.length === 1 ? "" : "es"}`}
-              </p>
-            </div>
-          </div>
+        <div className="pt-1">
+          <Input
+            className="sm:h-10"
+            placeholder="Search course files or a public title"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
         </div>
       </PageControlCard>
 
