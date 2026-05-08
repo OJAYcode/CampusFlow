@@ -4,7 +4,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
-  Download,
   Eye,
   EyeOff,
   Lock,
@@ -216,10 +215,6 @@ function AuthCanvas({
                     <p className="max-w-[28rem] text-[14px] leading-[1.7] text-[#696984] sm:text-[15px]">
                       {description}
                     </p>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-[#dbe6fa] bg-[#f7f9ff] px-3 py-1.5 text-[11px] font-medium text-[#4e5e80]">
-                      <Download className="h-3.5 w-3.5 text-[#255ac8]" />
-                      Install app from the floating button after the page loads.
-                    </div>
                   </div>
                 </div>
 
