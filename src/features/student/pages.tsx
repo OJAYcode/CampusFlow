@@ -1740,6 +1740,14 @@ export function StudentAttendanceHistoryPage() {
 export function StudentAnnouncementsPage() {
   const { data } = useQuery({ queryKey: ["student", "announcements"], queryFn: studentApi.announcements });
   const [enablingNotifications, setEnablingNotifications] = useState(false);
+  const queryClient = useQueryClient();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    try {
+      return typeof window !== "undefined" && window.localStorage?.getItem("student_notifications") === "true";
+    } catch (e) {
+      return false;
+    }
+  });
 
   const enableNotifications = async () => {
     setEnablingNotifications(true);
@@ -1747,6 +1755,10 @@ export function StudentAnnouncementsPage() {
     try {
       const result = await requestPushNotifications("student");
       if (result.enabled) {
+        try {
+          window.localStorage.setItem("student_notifications", "true");
+        } catch (e) {}
+        setNotificationsEnabled(true);
         toast.success("Student notifications enabled");
       } else {
         toast.error(result.reason === "push not configured" ? "Push notifications are not configured on the server yet." : "Notifications could not be enabled on this device.");
@@ -1758,6 +1770,48 @@ export function StudentAnnouncementsPage() {
     }
   };
 
+  // Poll for new announcements when notifications are enabled and show a local notification
+  useEffect(() => {
+    if (!notificationsEnabled) return;
+
+    let lastIds = new Set((data?.data || []).map((a) => a._id));
+
+    const checkNew = async () => {
+      try {
+        const res = await studentApi.announcements();
+        const anns = res.data || [];
+        const newOnes = anns.filter((a) => !lastIds.has(a._id));
+        if (newOnes.length) {
+          newOnes.forEach((a) => {
+            const title = a.title || "New announcement";
+            const body = a.body ? (a.body.length > 120 ? a.body.slice(0, 117) + "..." : a.body) : "";
+            try {
+              if (Notification.permission === "granted") {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                new Notification(title, { body });
+              }
+            } catch (e) {}
+            toast.success(`Announcement: ${title}`);
+          });
+          lastIds = new Set(anns.map((a) => a._id));
+          // refresh cache so UI reflects new announcements
+          queryClient.invalidateQueries({ queryKey: ["student", "announcements"] });
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    };
+
+    const id = window.setInterval(checkNew, 30000);
+    // run one immediate check
+    void checkNew();
+
+    return () => {
+      clearInterval(id);
+    };
+  }, [notificationsEnabled]);
+
   return (
     <div className="space-y-6">
       <PageIntro
@@ -1768,9 +1822,10 @@ export function StudentAnnouncementsPage() {
       <PageControlCard>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
-            Turn on notifications to receive lecturer announcements even when the student portal is not open.
+            <span className="hidden sm:inline">Turn on notifications to receive lecturer announcements even when the student portal is not open.</span>
+            <span className="inline sm:hidden">Enable notifications to get lecturer announcements.</span>
           </p>
-          <Button variant="secondary" onClick={() => void enableNotifications()} disabled={enablingNotifications}>
+          <Button variant="secondary" onClick={() => void enableNotifications()} disabled={enablingNotifications} className="w-full sm:w-auto">
             {enablingNotifications ? "Enabling..." : "Enable notifications"}
           </Button>
         </div>
