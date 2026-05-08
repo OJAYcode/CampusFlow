@@ -14,6 +14,8 @@ import { studentApi } from "@/src/api/student";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getRobustUserLocation } from "@/lib/geolocation";
 import { requestPushNotifications } from "@/src/lib/push-notifications";
+import { getStoredSession } from "@/src/utils/session-storage";
+import { apiClient } from "@/src/api/client";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Alert } from "@/src/components/ui/alert";
