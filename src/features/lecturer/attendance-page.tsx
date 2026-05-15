@@ -403,7 +403,7 @@ export function LecturerAttendancePage() {
       />
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="w-[96vw] max-w-6xl">
+        <DialogContent className="w-full max-w-full sm:max-w-5xl lg:max-w-6xl">
           <DialogHeader>
             <div className="rounded-[24px] border border-blue-100 bg-[linear-gradient(135deg,#eff5ff_0%,#ffffff_60%,#fff6e8_100%)] p-5 sm:p-6">
               <p className="heading-kicker text-[var(--primary)]">Session launcher</p>
@@ -414,7 +414,7 @@ export function LecturerAttendancePage() {
             </div>
           </DialogHeader>
 
-          <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-[1fr_1.2fr]">
             <div className="space-y-5">
               <div className="rounded-[22px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
                 <p className="heading-kicker text-slate-500">Session details</p>

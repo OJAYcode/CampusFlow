@@ -5,7 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Camera, ExternalLink, GraduationCap, LoaderCircle, Mic, PlayCircle, ShieldCheck, TimerReset, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { communicationApi } from "@/src/api/communication";
@@ -422,6 +422,15 @@ export function StudentElectivesPage() {
 }
 
 function OnlineMaterialCard({ item }: { item: OnlineMaterialResult }) {
+  const actionLabel =
+    item.source === "Google Books"
+      ? "Open in Google Books"
+      : item.source === "OpenAlex"
+        ? "Open academic source"
+      : item.source === "Project Gutenberg"
+        ? "Search Project Gutenberg"
+        : "Open free listing";
+
   return (
     <Card className="h-full border-[var(--border)] bg-white shadow-[0_12px_28px_rgba(15,37,71,0.05)]">
       <CardContent className="flex h-full flex-col gap-4 p-5">
@@ -446,10 +455,10 @@ function OnlineMaterialCard({ item }: { item: OnlineMaterialResult }) {
           </div>
         </div>
         <div className="mt-auto flex flex-col gap-3 border-t border-[rgba(0,27,58,0.08)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b95a7]">Public reference</span>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8b95a7]">Search result</span>
           <Button asChild size="sm" variant="secondary" className="w-full gap-2 sm:w-auto">
             <a href={item.sourceUrl} target="_blank" rel="noreferrer noopener">
-              Open source
+              {actionLabel}
               <ExternalLink className="h-4 w-4 shrink-0" />
             </a>
           </Button>
@@ -461,7 +470,7 @@ function OnlineMaterialCard({ item }: { item: OnlineMaterialResult }) {
 
 export function StudentMaterialsPage() {
   const [search, setSearch] = useState("");
-  const deferredSearch = useDeferredValue(search.trim());
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const normalizedSearch = search.trim().toLowerCase();
   const { data } = useQuery({ queryKey: ["student", "materials"], queryFn: studentApi.materials });
   const materials = useMemo(() => data?.data || [], [data?.data]);
@@ -472,10 +481,20 @@ export function StudentMaterialsPage() {
       ),
     [materials, normalizedSearch],
   );
-  const shouldSearchOnline = deferredSearch.length >= 2;
+
+  useEffect(() => {
+    const nextSearch = search.trim();
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(nextSearch);
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const shouldSearchOnline = debouncedSearch.length >= 2;
   const onlineResultsQuery = useQuery({
-    queryKey: ["student", "materials", "online", deferredSearch],
-    queryFn: () => studentApi.searchOnlineMaterials(deferredSearch),
+    queryKey: ["student", "materials", "online", "v2", debouncedSearch],
+    queryFn: () => studentApi.searchOnlineMaterials(debouncedSearch),
     enabled: shouldSearchOnline,
     staleTime: 1000 * 60 * 10,
   });
@@ -511,7 +530,7 @@ export function StudentMaterialsPage() {
           emptyTitle="No course materials found"
           emptyDescription={
             normalizedSearch
-              ? `No registered-course materials match "${deferredSearch}".`
+              ? `No registered-course materials match "${search.trim()}".`
               : "Materials uploaded for your approved course registrations will appear here."
           }
           columns={[
@@ -549,7 +568,7 @@ export function StudentMaterialsPage() {
             <div className="flex items-center gap-3 text-sm text-[#667085]">
               <LoaderCircle className="h-4 w-4 animate-spin text-[#255ac8]" />
               <span>
-                Searching public references for &ldquo;{deferredSearch}&rdquo;...
+                Searching public references for &ldquo;{debouncedSearch}&rdquo;...
               </span>
             </div>
           </PageControlCard>
@@ -558,7 +577,7 @@ export function StudentMaterialsPage() {
         ) : !onlineResults.length ? (
           <EmptyState
             title="No online references found"
-            description={`No public matches for "${deferredSearch}". Try a shorter title.`}
+            description={`No public matches for "${debouncedSearch}". Try a shorter title.`}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -1,22 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{
+    outcome: "accepted" | "dismissed";
+  }>;
+}
 
 export function PwaBootstrap() {
-  const [canInstall, setCanInstall] = useState(false);
-
   useEffect(() => {
+    // Prevent multiple registrations
+    let registered = false;
+
     // Register service worker
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
-        console.debug("Service Worker registration failed:", err);
-      });
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && !registered) {
+      registered = true;
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((registration) => {
+          console.log("Service Worker registered:", registration);
+        })
+        .catch((err) => {
+          console.debug("Service Worker registration failed:", err);
+        });
     }
 
-    // Listen for install prompt
+    // Log install prompt events for debugging
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setCanInstall(true);
+      console.log("beforeinstallprompt fired - install button should appear");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -26,7 +45,5 @@ export function PwaBootstrap() {
     };
   }, []);
 
-  // Note: The actual install button is provided by the browser in the address bar
-  // This component just ensures the service worker and manifest are properly set up
   return null;
 }

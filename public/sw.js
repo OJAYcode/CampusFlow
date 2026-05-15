@@ -1,3 +1,38 @@
+const CACHE_NAME = 'campusflow-v1';
+const OFFLINE_PAGE = '/offline.html';
+
+self.addEventListener('install', function (event) {
+  console.log('Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function (cache) {
+      console.log('Cache opened');
+      return cache.addAll([
+        '/',
+        OFFLINE_PAGE,
+      ]).catch(err => {
+        console.log('Cache addAll error:', err);
+      });
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+  console.log('Service Worker activating...');
+  event.waitUntil(
+    caches.keys().then(function (cacheNames) {
+      return Promise.all(
+        cacheNames.map(function (cacheName) {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  self.clients.claim();
+});
+
 self.addEventListener('push', function (event) {
   let data = {};
   try {
@@ -10,8 +45,8 @@ self.addEventListener('push', function (event) {
   const options = {
     body: data.body || '',
     data: data.data || {},
-    icon: '/images/icons/icon-192.png',
-    badge: '/images/icons/icon-72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -27,4 +62,17 @@ self.addEventListener('notificationclick', function (event) {
     }
     if (clients.openWindow) return clients.openWindow(url);
   }));
+});
+
+self.addEventListener('fetch', function (event) {
+  // For GET requests, try network first, fallback to cache
+  if (event.request.method === 'GET') {
+    event.respondWith(
+      fetch(event.request).catch(function () {
+        return caches.match(event.request).then(function (response) {
+          return response || caches.match(OFFLINE_PAGE);
+        });
+      })
+    );
+  }
 });

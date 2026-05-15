@@ -19,6 +19,15 @@ export const metadata: Metadata = {
   },
   description: "CampusFlow student portal for attendance, coursework, assessments, and academic communication.",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CampusFlow",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
+  themeColor: "#3b82f6",
 };
 
 export default function RootLayout({
@@ -28,6 +37,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="CampusFlow" />
+      </head>
       <body className={plusJakartaSans.variable}>
         <AppProviders>{children}</AppProviders>
       </body>

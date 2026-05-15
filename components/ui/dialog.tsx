@@ -92,7 +92,7 @@ const DialogContent: React.FC<DialogContentProps> = ({
  <button
  type="button"
  aria-label="Close dialog"
- className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/96 text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+ className="absolute right-3 top-3 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white/96 text-slate-500 shadow-sm transition hover:border-slate-300 hover:text-slate-900 sm:right-4 sm:top-4"
  onClick={() => dialogContext.onOpenChange(false)}
  >
  <X className="h-5 w-5" />
