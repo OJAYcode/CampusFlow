@@ -60,13 +60,13 @@ export function DataTable<T>({
   return (
     <div className="glass-panel overflow-hidden rounded-[20px] border border-[var(--border)] shadow-[0_12px_28px_rgba(15,37,71,0.05)]">
       <div className="overflow-x-auto">
-        <table className="min-w-full text-left">
+        <table className="min-w-[640px] w-full table-auto text-left">
           <thead className="sticky top-0 z-[1] bg-[#f7f9fc] text-[#202c4b]">
             <tr className="border-b border-[var(--border)]">
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6b7285]"
+                  className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] whitespace-normal text-[#6b7285]"
                 >
                   {column.header}
                 </th>
@@ -83,7 +83,7 @@ export function DataTable<T>({
                 )}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className={cn("px-5 py-4 align-top text-sm text-[#515b73]", column.className)}>
+                  <td key={column.key} className={cn("px-5 py-4 align-top text-sm whitespace-normal break-words text-[#515b73]", column.className)}>
                     {column.render(item)}
                   </td>
                 ))}

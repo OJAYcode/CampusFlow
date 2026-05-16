@@ -178,6 +178,7 @@ p {
 .portal-select {
   height: 2.375rem;
   width: 100%;
+  min-width: 0;
   border-radius: var(--radius);
   border: 1px solid var(--input);
   background: #ffffff;
@@ -225,6 +226,7 @@ p {
 
 .interactive-panel {
   width: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: calc(var(--radius) + 0.06rem);
   background: #ffffff;
@@ -297,6 +299,11 @@ p {
 }
 
 @media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   .page-shell {
     max-width: 100%;
   }

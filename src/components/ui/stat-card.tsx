@@ -62,7 +62,7 @@ export function StatCard({
           </div>
           <div className="min-w-0">
             <CardTitle className="text-[13px] font-medium leading-5 text-[#6a738a] sm:text-sm">{title}</CardTitle>
-            <div className="mt-1.5 text-[1.45rem] font-semibold leading-none tracking-[-0.04em] text-[#202c4b] sm:mt-2 sm:text-[2rem]">{value}</div>
+            <div className="mt-1.5 break-words text-[1.45rem] font-semibold leading-tight tracking-[-0.04em] text-[#202c4b] sm:mt-2 sm:text-[2rem]">{value}</div>
           </div>
         </div>
         {helper ? (

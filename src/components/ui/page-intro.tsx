@@ -13,11 +13,11 @@ export function PageIntro({
 }) {
   return (
     <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:justify-between">
-      <div className="space-y-2 sm:space-y-2.5">
+      <div className="min-w-0 space-y-2 sm:space-y-2.5">
         {kicker ? <p className="heading-kicker text-[#255ac8]">{kicker}</p> : null}
         <div className="space-y-1">
-          <h2 className="font-display text-[1.2rem] font-semibold tracking-[-0.03em] text-[#202c4b] sm:text-[1.38rem] md:text-[1.85rem]">{title}</h2>
-          {description ? <p className="max-w-2xl text-[12px] leading-5 text-[#667085] sm:max-w-3xl sm:text-[14px] sm:leading-6">{description}</p> : null}
+          <h2 className="font-display break-words text-[1.2rem] font-semibold tracking-[-0.03em] text-[#202c4b] sm:text-[1.38rem] md:text-[1.85rem]">{title}</h2>
+          {description ? <p className="max-w-2xl break-words text-[12px] leading-5 text-[#667085] sm:max-w-3xl sm:text-[14px] sm:leading-6">{description}</p> : null}
         </div>
       </div>
       {actions ? <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3 [&>*]:w-full sm:[&>*]:w-auto">{actions}</div> : null}

@@ -32,6 +32,7 @@ function getPreviewKind(url: string) {
   if (IMAGE_EXTENSIONS.has(extension)) return "image";
   if (VIDEO_EXTENSIONS.has(extension)) return "video";
   if (AUDIO_EXTENSIONS.has(extension)) return "audio";
+  if (extension === "pdf") return "pdf";
   if (extension === "docx") return "docx";
   if (TEXT_EXTENSIONS.has(extension)) return "text";
   if (OFFICE_EXTENSIONS.has(extension)) return "office";
@@ -65,6 +66,7 @@ export function FileLauncher({
   const [open, setOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState("");
   const [textContent, setTextContent] = useState("");
+  const [blobPreviewUrl, setBlobPreviewUrl] = useState("");
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const resolvedUrl = resolveFileUrl(fileUrl);
@@ -77,9 +79,10 @@ export function FileLauncher({
 
   useEffect(() => {
     if (!open || !resolvedUrl) return;
-    if (previewKind !== "docx" && previewKind !== "text") {
+    if (previewKind !== "docx" && previewKind !== "text" && !(isLocalFile && (previewKind === "pdf" || previewKind === "document"))) {
       setDocxHtml("");
       setTextContent("");
+      setBlobPreviewUrl("");
       setPreviewError("");
       setLoadingPreview(false);
       return;
@@ -103,6 +106,14 @@ export function FileLauncher({
           if (!cancelled) {
             setDocxHtml(result.value || "<p>No preview content was returned.</p>");
           }
+        } else if (isLocalFile && (previewKind === "pdf" || previewKind === "document")) {
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          if (!cancelled) {
+            setBlobPreviewUrl(objectUrl);
+          } else {
+            URL.revokeObjectURL(objectUrl);
+          }
         } else {
           const text = await response.text();
           if (!cancelled) {
@@ -124,8 +135,14 @@ export function FileLauncher({
 
     return () => {
       cancelled = true;
+      setBlobPreviewUrl((current) => {
+        if (current) {
+          URL.revokeObjectURL(current);
+        }
+        return "";
+      });
     };
-  }, [open, previewKind, resolvedUrl]);
+  }, [isLocalFile, open, previewKind, resolvedUrl]);
 
   if (!resolvedUrl) return null;
 
@@ -204,6 +221,30 @@ export function FileLauncher({
                   <p>Local Office files like this cannot be embedded through the online viewer from `localhost`.</p>
                   <p className="text-sm">DOCX files now open in-app directly, but spreadsheets and slide decks still need a new-tab fallback in local development.</p>
                 </div>
+              ) : isLocalFile && (previewKind === "pdf" || previewKind === "document") ? (
+                loadingPreview ? (
+                  <div className="flex h-full min-h-[320px] items-center justify-center gap-3 text-slate-600">
+                    <LoaderCircle className="h-5 w-5 animate-spin" />
+                    <span>Loading file preview...</span>
+                  </div>
+                ) : previewError ? (
+                  <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center text-slate-600">
+                    <AlertCircle className="h-8 w-8 text-amber-600" />
+                    <p>{previewError}</p>
+                  </div>
+                ) : blobPreviewUrl ? (
+                  <iframe
+                    key={blobPreviewUrl}
+                    src={blobPreviewUrl}
+                    title={fileName || "File preview"}
+                    className="h-full w-full bg-white"
+                  />
+                ) : (
+                  <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-3 px-6 text-center text-slate-600">
+                    <AlertCircle className="h-8 w-8 text-amber-600" />
+                    <p>This file could not be previewed in the app.</p>
+                  </div>
+                )
               ) : (
                 <iframe
                   key={previewKind === "office" ? officeEmbedUrl : resolvedUrl}

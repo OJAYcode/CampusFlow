@@ -447,7 +447,7 @@ export function LecturerAttendancePage() {
                   <Badge tone={locationState === "ready" ? "success" : locationState === "error" ? "danger" : "warning"}>{locationState}</Badge>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Button variant="secondary" onClick={captureLocation} disabled={locationState === "capturing"} className="min-w-[220px]">
+                  <Button variant="secondary" onClick={captureLocation} disabled={locationState === "capturing"} className="w-full sm:w-auto sm:min-w-[220px]">
                     <LocateFixed className="mr-2 h-4 w-4" />
                     {locationState === "capturing" ? "Capturing location..." : "Use my current location"}
                   </Button>
@@ -605,7 +605,7 @@ export function LecturerAttendancePage() {
       <Card>
         <CardHeader>
           <CardTitle>Session history and actions</CardTitle>
-          <CardDescription>Cancel sessions and export the list of successful submissions.</CardDescription>
+          <CardDescription>Manage sessions and print completed attendance reports with dates, student attendance rates, and submission details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {sessions.length ? (
@@ -616,6 +616,7 @@ export function LecturerAttendancePage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-slate-900">{getCourseName(session.course)}</p>
                       <Badge tone={session.status === "active" ? "success" : session.status === "cancelled" ? "danger" : "neutral"}>{session.status}</Badge>
+                      {["inactive", "expired"].includes(session.status) ? <Badge tone="info">report ready</Badge> : null}
                     </div>
                     <p className="text-sm text-slate-600">
                       {getCourseCode(session.course)} • Session code {session.sessionCode}
@@ -629,18 +630,22 @@ export function LecturerAttendancePage() {
                     <Button size="sm" variant="secondary" onClick={() => setLiveSessionId(session._id)}>
                       Watch live map
                     </Button>
-                    <Button size="sm" variant="secondary" onClick={() => exportSession(session._id, "pdf")}>
-                      <Download className="mr-2 h-4 w-4" />
-                      PDF
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => exportSession(session._id, "docx")}>
-                      <Download className="mr-2 h-4 w-4" />
-                      DOCX
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => exportSession(session._id, "csv")}>
-                      <Download className="mr-2 h-4 w-4" />
-                      CSV
-                    </Button>
+                    {["inactive", "expired"].includes(session.status) ? (
+                      <>
+                        <Button size="sm" onClick={() => exportSession(session._id, "pdf")}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Print attendance
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => exportSession(session._id, "docx")}>
+                          <Download className="mr-2 h-4 w-4" />
+                          DOCX
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => exportSession(session._id, "csv")}>
+                          <Download className="mr-2 h-4 w-4" />
+                          CSV
+                        </Button>
+                      </>
+                    ) : null}
                     {session.status === "active" ? (
                       <>
                         <Button size="sm" onClick={() => endSession.mutate(session._id)} disabled={endSession.isPending}>
@@ -650,6 +655,9 @@ export function LecturerAttendancePage() {
                           Cancel session
                         </Button>
                       </>
+                    ) : null}
+                    {session.status === "cancelled" ? (
+                      <span className="text-sm text-slate-500">Cancelled sessions do not have printable attendance reports.</span>
                     ) : null}
                   </div>
                 </div>
@@ -682,24 +690,53 @@ export function LecturerAttendancePage() {
                 <StatCard icon={Radar} title="Below threshold" value={attendanceReport.studentsBelowThreshold} tone="danger" />
               </div>
 
-              <div className="overflow-hidden rounded-[20px] border border-[var(--border)]">
-                <div className="grid grid-cols-[minmax(0,1.4fr)_120px_120px_120px] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                  <span>Student</span>
-                  <span>Submitted</span>
-                  <span>Missed</span>
-                  <span>Attendance</span>
-                </div>
+              <div className="space-y-3 md:hidden">
                 {attendanceReport.students.map((student) => (
-                  <div key={student.student._id} className="grid grid-cols-[minmax(0,1.4fr)_120px_120px_120px] border-t border-[var(--border)] px-4 py-3 text-sm text-slate-700">
-                    <div>
-                      <p className="font-medium text-slate-900">{student.student.fullName}</p>
-                      <p className="text-xs text-slate-500">{student.student.matricNumber || student.student.email || "--"}</p>
+                  <div key={student.student._id} className="rounded-[18px] border border-[var(--border)] bg-white p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium text-slate-900">{student.student.fullName}</p>
+                        <p className="text-xs text-slate-500">{student.student.matricNumber || student.student.email || "--"}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div className="rounded-[14px] bg-slate-50 p-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Submitted</p>
+                          <p className="mt-2 font-semibold text-slate-900">{student.submittedSessions}</p>
+                        </div>
+                        <div className="rounded-[14px] bg-slate-50 p-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Missed</p>
+                          <p className="mt-2 font-semibold text-slate-900">{student.missedSessions}</p>
+                        </div>
+                        <div className="rounded-[14px] bg-slate-50 p-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Attendance</p>
+                          <p className="mt-2 font-semibold text-slate-900">{Math.round(student.attendancePercentage)}%</p>
+                        </div>
+                      </div>
                     </div>
-                    <span>{student.submittedSessions}</span>
-                    <span>{student.missedSessions}</span>
-                    <span className="font-semibold text-slate-900">{Math.round(student.attendancePercentage)}%</span>
                   </div>
                 ))}
+              </div>
+
+              <div className="hidden overflow-x-auto rounded-[20px] border border-[var(--border)] md:block">
+                <div className="min-w-[700px]">
+                  <div className="grid grid-cols-[minmax(220px,1.4fr)_120px_120px_120px] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                    <span>Student</span>
+                    <span>Submitted</span>
+                    <span>Missed</span>
+                    <span>Attendance</span>
+                  </div>
+                  {attendanceReport.students.map((student) => (
+                    <div key={student.student._id} className="grid grid-cols-[minmax(220px,1.4fr)_120px_120px_120px] border-t border-[var(--border)] px-4 py-3 text-sm text-slate-700">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-900">{student.student.fullName}</p>
+                        <p className="truncate text-xs text-slate-500">{student.student.matricNumber || student.student.email || "--"}</p>
+                      </div>
+                      <span>{student.submittedSessions}</span>
+                      <span>{student.missedSessions}</span>
+                      <span className="font-semibold text-slate-900">{Math.round(student.attendancePercentage)}%</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           ) : (

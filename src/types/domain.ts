@@ -117,6 +117,7 @@ export interface Assessment {
   title: string;
   instructions?: string;
   assessmentType: "quiz" | "test" | "exam";
+  totalMarks?: number;
   durationMinutes: number;
   availableFrom: string;
   availableTo: string;

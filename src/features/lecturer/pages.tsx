@@ -4,7 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BookOpen, ClipboardCheck, FileText, GraduationCap, MessageSquare, Plus, SendHorizontal, Trash2, Upload, Users } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ import { requestPushNotifications } from "@/src/lib/push-notifications";
 import { useAuthStore } from "@/src/store/auth-store";
 import { getErrorMessage } from "@/src/utils/error";
 import { formatDate, formatFileSize } from "@/src/utils/format";
+import { resolveFileUrl } from "@/src/utils/files";
 
 function getCourseBasePath(pathname: string | null) {
   return (pathname ?? "").startsWith("/staff/lecturer") ? "/staff/lecturer/courses" : "/lecturer/courses";
@@ -596,7 +597,6 @@ export function LecturerAssignmentsPage() {
   });
   const courses = coursesQuery.data?.data || [];
   const [activeCourseId, setActiveCourseId] = useState("");
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [instructions, setInstructions] = useState("");
@@ -605,8 +605,6 @@ export function LecturerAssignmentsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [editingAssignmentId, setEditingAssignmentId] = useState("");
   const [assignmentDueDraft, setAssignmentDueDraft] = useState("");
-  const [gradeDrafts, setGradeDrafts] = useState<Record<string, string>>({});
-  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!activeCourseId && courses[0]?.course?._id) {
@@ -621,21 +619,6 @@ export function LecturerAssignmentsPage() {
   });
 
   const assignments = workspaceQuery.data?.data?.assignments || [];
-
-  useEffect(() => {
-    if (assignments.length && !assignments.some((item) => item._id === selectedAssignmentId)) {
-      setSelectedAssignmentId(assignments[0]._id);
-    }
-    if (!assignments.length) {
-      setSelectedAssignmentId("");
-    }
-  }, [assignments, selectedAssignmentId]);
-
-  const submissionsQuery = useQuery({
-    queryKey: ["lecturer", "assignment-submissions", selectedAssignmentId],
-    queryFn: () => lecturerApi.submissions(selectedAssignmentId),
-    enabled: Boolean(selectedAssignmentId),
-  });
 
   const createAssignment = useMutation({
     mutationFn: async () => {
@@ -672,9 +655,6 @@ export function LecturerAssignmentsPage() {
     onSuccess: async () => {
       toast.success("Assignment deleted");
       await queryClient.invalidateQueries({ queryKey: ["lecturer", "workspace", activeCourseId] });
-      if (selectedAssignmentId) {
-        await queryClient.invalidateQueries({ queryKey: ["lecturer", "assignment-submissions", selectedAssignmentId] });
-      }
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -694,18 +674,7 @@ export function LecturerAssignmentsPage() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
-  const gradeSubmission = useMutation({
-    mutationFn: ({ submissionId, grade, feedback }: { submissionId: string; grade: number; feedback?: string }) =>
-      lecturerApi.gradeSubmission(submissionId, { grade, feedback }),
-    onSuccess: async () => {
-      toast.success("Submission graded");
-      await queryClient.invalidateQueries({ queryKey: ["lecturer", "assignment-submissions", selectedAssignmentId] });
-    },
-    onError: (error) => toast.error(getErrorMessage(error)),
-  });
-
   const activeCourse = courses.find((item) => item.course._id === activeCourseId)?.course;
-  const submissions = submissionsQuery.data?.data || [];
 
   return (
     <div className="space-y-6">
@@ -717,7 +686,7 @@ export function LecturerAssignmentsPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard icon={ClipboardCheck} title="Assignments" value={assignments.length} tone="warning" />
-        <StatCard icon={Users} title="Submissions" value={submissions.length} tone="info" />
+        <StatCard icon={Users} title="Submission review" value="Page" tone="info" />
         <StatCard icon={GraduationCap} title="Course" value={activeCourse?.code || "Select"} tone="primary" />
         <StatCard icon={BookOpen} title="Status" value="Ready" tone="success" />
       </div>
@@ -796,8 +765,10 @@ export function LecturerAssignmentsPage() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant={selectedAssignmentId === assignment._id ? "primary" : "secondary"} onClick={() => setSelectedAssignmentId(assignment._id)}>
-                          {selectedAssignmentId === assignment._id ? "Viewing submissions" : "Open submissions"}
+                        <Button asChild size="sm" variant="secondary">
+                          <Link href={`/staff/lecturer/assignments/${assignment._id}?courseId=${activeCourseId}`}>
+                            View submissions
+                          </Link>
                         </Button>
                         <Button
                           size="sm"
@@ -821,7 +792,7 @@ export function LecturerAssignmentsPage() {
                       </div>
                     </div>
                     {editingAssignmentId === assignment._id ? (
-                      <div className="mt-4 grid gap-3 rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-3 md:grid-cols-[1fr_auto_auto] md:items-end">
+                      <div className="mt-4 grid gap-3 rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-slate-700">New due date</label>
                           <Input type="datetime-local" value={assignmentDueDraft} onChange={(event) => setAssignmentDueDraft(event.target.value)} />
@@ -850,83 +821,169 @@ export function LecturerAssignmentsPage() {
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Submission review</CardTitle>
-              <CardDescription>{selectedAssignmentId ? "Grade student submissions for the selected assignment." : "Choose an assignment to review submissions."}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!selectedAssignmentId ? (
-                <Alert variant="info">Select an assignment above to load submissions.</Alert>
-              ) : submissions.length ? (
-                submissions.map((submission) => (
-                  <div key={submission._id} className="rounded-[18px] border border-[var(--border)] bg-white p-4">
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-slate-900">{submission.student?.fullName || "Student"}</p>
-                          <p className="text-sm text-slate-600">{submission.student?.matricNumber || "Matric not available"}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {submission.submittedAt ? (
-                            <span className="text-xs text-slate-500">{formatDate(submission.submittedAt, true)}</span>
-                          ) : null}
-                          <Badge tone={submission.status === "graded" ? "success" : "warning"}>{submission.status || "submitted"}</Badge>
-                        </div>
-                      </div>
-                      {submission.submissionText ? <p className="text-sm leading-6 text-slate-600">{submission.submissionText}</p> : null}
-                      {submission.attachmentUrls?.length ? (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-slate-800">Submitted files</p>
-                          <div className="flex flex-wrap gap-2">
-                            {submission.attachmentUrls.map((url, index) => (
-                              <FileLauncher
-                                key={`${submission._id}-${index}`}
-                                fileUrl={url}
-                                fileName={`Submission file ${index + 1}`}
-                                triggerLabel={`Open file ${index + 1}`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-                      <div className="grid gap-3 md:grid-cols-[120px_1fr_auto]">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="Grade"
-                          value={gradeDrafts[submission._id] ?? (submission.grade?.toString() || "")}
-                          onChange={(event) => setGradeDrafts((current) => ({ ...current, [submission._id]: event.target.value }))}
-                        />
-                        <Textarea
-                          placeholder="Feedback"
-                          value={feedbackDrafts[submission._id] ?? (submission.feedback || "")}
-                          onChange={(event) => setFeedbackDrafts((current) => ({ ...current, [submission._id]: event.target.value }))}
-                        />
-                        <Button
-                          onClick={() =>
-                            gradeSubmission.mutate({
-                              submissionId: submission._id,
-                              grade: Number(gradeDrafts[submission._id] ?? submission.grade ?? 0),
-                              feedback: feedbackDrafts[submission._id] ?? submission.feedback ?? "",
-                            })
-                          }
-                          disabled={gradeSubmission.isPending}
-                        >
-                          Save grade
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <Alert variant="info">No submissions yet for the selected assignment.</Alert>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function LecturerAssignmentSubmissionsPage({ assignmentId }: { assignmentId: string }) {
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const courseIdFromQuery = searchParams?.get("courseId") || "";
+  const coursesQuery = useQuery({
+    queryKey: ["lecturer", "courses"],
+    queryFn: lecturerApi.courses,
+  });
+  const courses = coursesQuery.data?.data || [];
+  const [activeCourseId, setActiveCourseId] = useState(courseIdFromQuery);
+  const [gradeDrafts, setGradeDrafts] = useState<Record<string, string>>({});
+  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (courseIdFromQuery) {
+      setActiveCourseId(courseIdFromQuery);
+      return;
+    }
+
+    if (!activeCourseId && courses[0]?.course?._id) {
+      setActiveCourseId(courses[0].course._id);
+    }
+  }, [activeCourseId, courseIdFromQuery, courses]);
+
+  const workspaceQuery = useQuery({
+    queryKey: ["lecturer", "workspace", activeCourseId],
+    queryFn: () => lecturerApi.workspace(activeCourseId),
+    enabled: Boolean(activeCourseId),
+  });
+
+  const submissionsQuery = useQuery({
+    queryKey: ["lecturer", "assignment-submissions", assignmentId],
+    queryFn: () => lecturerApi.submissions(assignmentId),
+    enabled: Boolean(assignmentId),
+  });
+
+  const gradeSubmission = useMutation({
+    mutationFn: ({ submissionId, grade, feedback }: { submissionId: string; grade: number; feedback?: string }) =>
+      lecturerApi.gradeSubmission(submissionId, { grade, feedback }),
+    onSuccess: async () => {
+      toast.success("Submission graded");
+      await queryClient.invalidateQueries({ queryKey: ["lecturer", "assignment-submissions", assignmentId] });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
+  const assignments = workspaceQuery.data?.data?.assignments || [];
+  const selectedAssignment = assignments.find((item) => item._id === assignmentId);
+  const submissions = submissionsQuery.data?.data || [];
+  const activeCourse = courses.find((item) => item.course._id === activeCourseId)?.course;
+
+  return (
+    <div className="space-y-6">
+      <PageIntro
+        kicker="Assignments"
+        title={selectedAssignment?.title || "Assignment submissions"}
+        description="Review every student submission, open attached files in a new tab, and save grades from one dedicated page."
+      />
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard icon={Users} title="Submissions" value={submissions.length} tone="info" />
+        <StatCard icon={ClipboardCheck} title="Overall marks" value={selectedAssignment?.totalMarks ?? "--"} tone="warning" />
+        <StatCard icon={GraduationCap} title="Course" value={activeCourse?.code || "Select"} tone="primary" />
+        <StatCard icon={BookOpen} title="Status" value="Reviewing" tone="success" />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assignment summary</CardTitle>
+          <CardDescription>Return to the assignments workspace when you are done reviewing this coursework.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+            <span>Due: {selectedAssignment?.dueDate ? formatDate(selectedAssignment.dueDate, true) : "--"}</span>
+            <span>Marks: {selectedAssignment?.totalMarks ?? "--"}</span>
+            <span>Files: {selectedAssignment?.attachmentUrls?.length || 0}</span>
+          </div>
+          {selectedAssignment?.description ? <p className="text-sm leading-6 text-slate-600">{selectedAssignment.description}</p> : null}
+          <div>
+            <Button asChild variant="secondary">
+              <Link href="/staff/lecturer/assignments">Back to assignments</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Student submissions</CardTitle>
+          <CardDescription>All submitted work for this assignment appears here.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {submissions.length ? (
+            submissions.map((submission) => (
+              <div key={submission._id} className="rounded-[18px] border border-[var(--border)] bg-white p-4">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{submission.student?.fullName || "Student"}</p>
+                      <p className="text-sm text-slate-600">{submission.student?.matricNumber || "Matric not available"}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {submission.submittedAt ? (
+                        <span className="text-xs text-slate-500">{formatDate(submission.submittedAt, true)}</span>
+                      ) : null}
+                      <Badge tone={submission.status === "graded" ? "success" : "warning"}>{submission.status || "submitted"}</Badge>
+                    </div>
+                  </div>
+                  {submission.submissionText ? <p className="text-sm leading-6 text-slate-600">{submission.submissionText}</p> : null}
+                  {submission.attachmentUrls?.length ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-slate-800">Submitted files</p>
+                      <div className="flex flex-wrap gap-2">
+                        {submission.attachmentUrls.map((url, index) => (
+                          <Button key={`${submission._id}-${index}`} asChild size="sm" variant="secondary">
+                            <a href={resolveFileUrl(url)} target="_blank" rel="noreferrer noopener">
+                              Open file {index + 1}
+                            </a>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="grid gap-3 lg:grid-cols-[120px_1fr_auto]">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Grade"
+                      value={gradeDrafts[submission._id] ?? (submission.grade?.toString() || "")}
+                      onChange={(event) => setGradeDrafts((current) => ({ ...current, [submission._id]: event.target.value }))}
+                    />
+                    <Textarea
+                      placeholder="Feedback"
+                      value={feedbackDrafts[submission._id] ?? (submission.feedback || "")}
+                      onChange={(event) => setFeedbackDrafts((current) => ({ ...current, [submission._id]: event.target.value }))}
+                    />
+                    <Button
+                      onClick={() =>
+                        gradeSubmission.mutate({
+                          submissionId: submission._id,
+                          grade: Number(gradeDrafts[submission._id] ?? submission.grade ?? 0),
+                          feedback: feedbackDrafts[submission._id] ?? submission.feedback ?? "",
+                        })
+                      }
+                      disabled={gradeSubmission.isPending}
+                    >
+                      Save grade
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <Alert variant="info">No submissions yet for this assignment.</Alert>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -939,17 +996,16 @@ export function LecturerAssessmentsPage() {
   });
   const courses = coursesQuery.data?.data || [];
   const [activeCourseId, setActiveCourseId] = useState("");
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
   const [title, setTitle] = useState("");
   const [instructions, setInstructions] = useState("");
   const [assessmentType, setAssessmentType] = useState("quiz");
+  const [assessmentTotalMarks, setAssessmentTotalMarks] = useState("100");
   const [durationMinutes, setDurationMinutes] = useState("30");
   const [availableFrom, setAvailableFrom] = useState("");
   const [availableTo, setAvailableTo] = useState("");
   const [editingAssessmentId, setEditingAssessmentId] = useState("");
   const [editAvailableFrom, setEditAvailableFrom] = useState("");
   const [editAvailableTo, setEditAvailableTo] = useState("");
-  const [expandedAttemptId, setExpandedAttemptId] = useState("");
   const [questions, setQuestions] = useState([
     { id: "1", questionText: "", questionType: "multiple_choice", optionsText: "", correctAnswer: "", marks: "1" },
   ]);
@@ -970,24 +1026,6 @@ export function LecturerAssessmentsPage() {
     (left, right) =>
       new Date(right.availableTo || 0).getTime() - new Date(left.availableTo || 0).getTime(),
   );
-
-  useEffect(() => {
-    if (assessments.length && !assessments.some((item) => item._id === selectedAssessmentId)) {
-      setSelectedAssessmentId(assessments[0]._id);
-    }
-    if (!assessments.length) {
-      setSelectedAssessmentId("");
-    }
-  }, [assessments, selectedAssessmentId]);
-
-  const attemptsQuery = useQuery({
-    queryKey: ["lecturer", "assessment-attempts", selectedAssessmentId],
-    queryFn: () => lecturerApi.assessmentAttempts(selectedAssessmentId),
-    enabled: Boolean(selectedAssessmentId),
-    refetchInterval: 5000,
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-  });
 
   const assessmentAttemptCountsQuery = useQuery({
     queryKey: ["lecturer", "assessment-attempt-counts", activeCourseId, assessments.map((item) => item._id).join(",")],
@@ -1018,6 +1056,7 @@ export function LecturerAssessmentsPage() {
         title: title.trim(),
         instructions: instructions.trim(),
         assessmentType,
+        totalMarks: Number(assessmentTotalMarks || "100"),
         durationMinutes: Number(durationMinutes),
         availableFrom: new Date(availableFrom).toISOString(),
         availableTo: new Date(availableTo).toISOString(),
@@ -1059,9 +1098,6 @@ export function LecturerAssessmentsPage() {
     onSuccess: async () => {
       toast.success("Assessment deleted");
       await queryClient.invalidateQueries({ queryKey: ["lecturer", "workspace", activeCourseId] });
-      if (selectedAssessmentId) {
-        await queryClient.invalidateQueries({ queryKey: ["lecturer", "assessment-attempts", selectedAssessmentId] });
-      }
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -1084,33 +1120,8 @@ export function LecturerAssessmentsPage() {
   });
 
   const activeCourse = courses.find((item) => item.course._id === activeCourseId)?.course;
-  const attempts = attemptsQuery.data?.data || [];
-  const selectedAssessment = assessments.find((item) => item._id === selectedAssessmentId);
   const assessmentAttemptCounts = assessmentAttemptCountsQuery.data || {};
-
-  useEffect(() => {
-    if (!assessments.length) return;
-
-    const assessmentWithAttempts = assessments.find(
-      (assessment) => (assessmentAttemptCounts[assessment._id] || 0) > 0,
-    );
-
-    if (!assessmentWithAttempts) return;
-
-    const selectedAttemptCount = assessmentAttemptCounts[selectedAssessmentId] || 0;
-    if (!selectedAssessmentId || selectedAttemptCount === 0) {
-      setSelectedAssessmentId(assessmentWithAttempts._id);
-    }
-  }, [assessmentAttemptCounts, assessments, selectedAssessmentId]);
-
-  useEffect(() => {
-    if (attempts.length && !attempts.some((attempt) => attempt._id === expandedAttemptId)) {
-      setExpandedAttemptId(attempts[0]._id);
-    }
-    if (!attempts.length) {
-      setExpandedAttemptId("");
-    }
-  }, [attempts, expandedAttemptId]);
+  const totalAttempts = Object.values(assessmentAttemptCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="space-y-6">
@@ -1122,7 +1133,7 @@ export function LecturerAssessmentsPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard icon={ClipboardCheck} title="Assessments" value={assessments.length} tone="success" />
-        <StatCard icon={Users} title="Attempts" value={attempts.length} tone="info" />
+        <StatCard icon={Users} title="Attempts" value={totalAttempts} tone="info" />
         <StatCard icon={GraduationCap} title="Course" value={activeCourse?.code || "Select"} tone="primary" />
         <StatCard icon={BookOpen} title="Status" value="Ready" tone="warning" />
       </div>
@@ -1147,6 +1158,10 @@ export function LecturerAssessmentsPage() {
                   <option value="test">Test</option>
                   <option value="exam">Exam</option>
                 </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Overall marks</label>
+                <Input type="number" min="0" value={assessmentTotalMarks} onChange={(event) => setAssessmentTotalMarks(event.target.value)} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Duration (minutes)</label>
@@ -1272,14 +1287,17 @@ export function LecturerAssessmentsPage() {
                           </Badge>
                         </div>
                         <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+                          <span>{assessment.totalMarks ?? "--"} marks</span>
                           <span>{assessment.durationMinutes} mins</span>
                           <span>{formatDate(assessment.availableFrom, true)}</span>
                           <span>{formatDate(assessment.availableTo, true)}</span>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant={selectedAssessmentId === assessment._id ? "primary" : "secondary"} onClick={() => setSelectedAssessmentId(assessment._id)}>
-                          {selectedAssessmentId === assessment._id ? "Viewing attempts" : "Review attempts"}
+                        <Button asChild size="sm" variant="secondary">
+                          <Link href={`/staff/lecturer/assessments/${assessment._id}?courseId=${activeCourseId}`}>
+                            {(assessmentAttemptCounts[assessment._id] || 0) > 0 ? "View attempts" : "Review attempts"}
+                          </Link>
                         </Button>
                         <Button
                           size="sm"
@@ -1304,7 +1322,7 @@ export function LecturerAssessmentsPage() {
                       </div>
                     </div>
                     {editingAssessmentId === assessment._id ? (
-                      <div className="mt-4 grid gap-3 rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
+                      <div className="mt-4 grid gap-3 rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-3 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
                         <div className="space-y-2">
                           <label className="text-sm font-medium text-slate-700">Available from</label>
                           <Input type="datetime-local" value={editAvailableFrom} onChange={(event) => setEditAvailableFrom(event.target.value)} />
@@ -1344,154 +1362,243 @@ export function LecturerAssessmentsPage() {
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Attempt review</CardTitle>
-              <CardDescription>
-                {selectedAssessment
-                  ? `Showing attempts for ${selectedAssessment.title}. New submissions appear here automatically.`
-                  : "Choose an assessment to load attempts."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!selectedAssessmentId ? (
-                <Alert variant="info">Select an assessment above to review attempts.</Alert>
-              ) : attempts.length ? (
-                attempts.map((attempt) => (
-                  <div key={attempt._id} className="rounded-[18px] border border-[var(--border)] bg-white p-4">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <div>
-                        <p className="font-semibold text-slate-900">{attempt.student?.fullName || "Student"}</p>
-                        <p className="text-sm text-slate-600">{attempt.student?.matricNumber || "Matric not available"}</p>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                          <Badge tone={attempt.proctoring?.cameraGranted ? "success" : "warning"}>
-                            Camera {attempt.proctoring?.cameraGranted ? "on" : "off"}
-                          </Badge>
-                          <Badge tone={attempt.proctoring?.microphoneGranted ? "success" : "warning"}>
-                            Mic {attempt.proctoring?.microphoneGranted ? "on" : "off"}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm text-slate-600">
-                        <Badge tone={attempt.status === "graded" ? "success" : "info"}>{attempt.status}</Badge>
-                        <span>Score: <strong className="text-slate-900">{attempt.score ?? "--"}</strong></span>
-                        <span>Submitted: {formatDate(attempt.submittedAt, true)}</span>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() =>
-                            setExpandedAttemptId((current) => (current === attempt._id ? "" : attempt._id))
-                          }
-                        >
-                          {expandedAttemptId === attempt._id ? "Hide answers" : "Review answers"}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-4 grid gap-4 lg:grid-cols-[240px_1fr]">
-                      <div className="overflow-hidden rounded-[16px] border border-[var(--border)] bg-slate-950">
-                        {attempt.proctoring?.latestSnapshotDataUrl ? (
-                          <img
-                            src={attempt.proctoring.latestSnapshotDataUrl}
-                            alt={`${attempt.student?.fullName || "Student"} proctor snapshot`}
-                            className="aspect-video w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex aspect-video items-center justify-center px-4 text-center text-sm text-slate-300">
-                            No live camera preview yet
-                          </div>
-                        )}
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="panel-soft p-3">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Tab switches</p>
-                          <p className="mt-2 text-xl font-semibold text-slate-900">{attempt.proctoring?.tabSwitchCount || 0}</p>
-                        </div>
-                        <div className="panel-soft p-3">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Window blurs</p>
-                          <p className="mt-2 text-xl font-semibold text-slate-900">{attempt.proctoring?.windowBlurCount || 0}</p>
-                        </div>
-                        <div className="panel-soft p-3">
-                          <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Mic activity</p>
-                          <p className="mt-2 text-xl font-semibold text-slate-900">{Math.round((attempt.proctoring?.micLevel || 0) * 100)}%</p>
-                        </div>
-                      </div>
-                    </div>
-                    {expandedAttemptId === attempt._id ? (
-                      <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-slate-900">Submitted answers</p>
-                            <p className="text-sm text-slate-600">Review each response, the expected answer, and awarded marks.</p>
-                          </div>
-                          <Badge tone="neutral">{attempt.answers?.length || 0} response{(attempt.answers?.length || 0) === 1 ? "" : "s"}</Badge>
-                        </div>
-                        {attempt.answers?.length ? (
-                          [...attempt.answers]
-                            .sort((left, right) => {
-                              const leftQuestion = typeof left.question === "object" ? left.question : undefined;
-                              const rightQuestion = typeof right.question === "object" ? right.question : undefined;
-                              return Number(leftQuestion?.order || 0) - Number(rightQuestion?.order || 0);
-                            })
-                            .map((answer, index) => {
-                              const question = typeof answer.question === "object" ? answer.question : undefined;
-                              return (
-                                <div key={`${attempt._id}-${question?._id || index}`} className="rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-4">
-                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                    <div className="space-y-2">
-                                      <p className="text-sm font-semibold text-slate-900">
-                                        Question {question?.order || index + 1}
-                                      </p>
-                                      <p className="text-sm leading-6 text-slate-700">
-                                        {question?.questionText || "Question text unavailable"}
-                                      </p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 text-xs">
-                                      <Badge tone={answer.isCorrect ? "success" : "warning"}>
-                                        {answer.isCorrect ? "Correct" : "Needs review"}
-                                      </Badge>
-                                      <Badge tone="info">
-                                        {answer.awardedMarks ?? 0} / {question?.marks ?? 0} marks
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                  <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                                    <div className="panel-soft p-3">
-                                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Student answer</p>
-                                      <p className="mt-2 text-sm leading-6 text-slate-900">
-                                        {answer.answer === null || answer.answer === undefined || answer.answer === ""
-                                          ? "No answer submitted"
-                                          : String(answer.answer)}
-                                      </p>
-                                    </div>
-                                    <div className="panel-soft p-3">
-                                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Expected answer</p>
-                                      <p className="mt-2 text-sm leading-6 text-slate-900">
-                                        {question?.correctAnswer === null || question?.correctAnswer === undefined || question?.correctAnswer === ""
-                                          ? "Not available"
-                                          : String(question.correctAnswer)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                        ) : (
-                          <Alert variant="info">This attempt does not have any submitted answers to review yet.</Alert>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              ) : (
-                <Alert variant="info">
-                  No submitted attempts yet for {selectedAssessment?.title || "the selected assessment"}.
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function LecturerAssessmentAttemptsPage({ assessmentId }: { assessmentId: string }) {
+  const searchParams = useSearchParams();
+  const courseIdFromQuery = searchParams?.get("courseId") || "";
+  const coursesQuery = useQuery({
+    queryKey: ["lecturer", "courses"],
+    queryFn: lecturerApi.courses,
+  });
+  const courses = coursesQuery.data?.data || [];
+  const [activeCourseId, setActiveCourseId] = useState(courseIdFromQuery);
+  const [expandedAttemptId, setExpandedAttemptId] = useState("");
+
+  useEffect(() => {
+    if (courseIdFromQuery) {
+      setActiveCourseId(courseIdFromQuery);
+      return;
+    }
+
+    if (!activeCourseId && courses[0]?.course?._id) {
+      setActiveCourseId(courses[0].course._id);
+    }
+  }, [activeCourseId, courseIdFromQuery, courses]);
+
+  const workspaceQuery = useQuery({
+    queryKey: ["lecturer", "workspace", activeCourseId],
+    queryFn: () => lecturerApi.workspace(activeCourseId),
+    enabled: Boolean(activeCourseId),
+  });
+
+  const attemptsQuery = useQuery({
+    queryKey: ["lecturer", "assessment-attempts", assessmentId],
+    queryFn: () => lecturerApi.assessmentAttempts(assessmentId),
+    enabled: Boolean(assessmentId),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const assessments = workspaceQuery.data?.data?.assessments || [];
+  const selectedAssessment = assessments.find((item) => item._id === assessmentId);
+  const attempts = attemptsQuery.data?.data || [];
+  const activeCourse = courses.find((item) => item.course._id === activeCourseId)?.course;
+
+  useEffect(() => {
+    if (attempts.length && !attempts.some((attempt) => attempt._id === expandedAttemptId)) {
+      setExpandedAttemptId(attempts[0]._id);
+    }
+    if (!attempts.length) {
+      setExpandedAttemptId("");
+    }
+  }, [attempts, expandedAttemptId]);
+
+  return (
+    <div className="space-y-6">
+      <PageIntro
+        kicker="Assessments"
+        title={selectedAssessment?.title || "Assessment attempts"}
+        description="Review submitted attempts, inspect proctoring signals, and expand each student response from one dedicated page."
+      />
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard icon={Users} title="Attempts" value={attempts.length} tone="info" />
+        <StatCard icon={ClipboardCheck} title="Overall marks" value={selectedAssessment?.totalMarks ?? "--"} tone="success" />
+        <StatCard icon={GraduationCap} title="Course" value={activeCourse?.code || "Select"} tone="primary" />
+        <StatCard icon={BookOpen} title="Status" value="Reviewing" tone="warning" />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assessment summary</CardTitle>
+          <CardDescription>Return to the assessments workspace when you are done reviewing student attempts.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+            <span>Type: {selectedAssessment?.assessmentType || "--"}</span>
+            <span>Marks: {selectedAssessment?.totalMarks ?? "--"}</span>
+            <span>Duration: {selectedAssessment?.durationMinutes ?? "--"} mins</span>
+            <span>Available: {selectedAssessment?.availableFrom ? formatDate(selectedAssessment.availableFrom, true) : "--"}</span>
+            <span>Closes: {selectedAssessment?.availableTo ? formatDate(selectedAssessment.availableTo, true) : "--"}</span>
+          </div>
+          {selectedAssessment?.instructions ? <p className="text-sm leading-6 text-slate-600">{selectedAssessment.instructions}</p> : null}
+          <div>
+            <Button asChild variant="secondary">
+              <Link href="/staff/lecturer/assessments">Back to assessments</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Attempt review</CardTitle>
+          <CardDescription>
+            {selectedAssessment
+              ? `Showing attempts for ${selectedAssessment.title}. New submissions appear here automatically.`
+              : "Loading assessment attempt details."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {attempts.length ? (
+            attempts.map((attempt) => (
+              <div key={attempt._id} className="rounded-[18px] border border-[var(--border)] bg-white p-4">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">{attempt.student?.fullName || "Student"}</p>
+                    <p className="text-sm text-slate-600">{attempt.student?.matricNumber || "Matric not available"}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <Badge tone={attempt.proctoring?.cameraGranted ? "success" : "warning"}>
+                        Camera {attempt.proctoring?.cameraGranted ? "on" : "off"}
+                      </Badge>
+                      <Badge tone={attempt.proctoring?.microphoneGranted ? "success" : "warning"}>
+                        Mic {attempt.proctoring?.microphoneGranted ? "on" : "off"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+                    <Badge tone={attempt.status === "graded" ? "success" : "info"}>{attempt.status}</Badge>
+                    <span>Score: <strong className="text-slate-900">{attempt.score ?? "--"}</strong></span>
+                    <span>Submitted: {formatDate(attempt.submittedAt, true)}</span>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        setExpandedAttemptId((current) => (current === attempt._id ? "" : attempt._id))
+                      }
+                    >
+                      {expandedAttemptId === attempt._id ? "Hide answers" : "Review answers"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-4 lg:grid-cols-[240px_1fr]">
+                  <div className="overflow-hidden rounded-[16px] border border-[var(--border)] bg-slate-950">
+                    {attempt.proctoring?.latestSnapshotDataUrl ? (
+                      <img
+                        src={attempt.proctoring.latestSnapshotDataUrl}
+                        alt={`${attempt.student?.fullName || "Student"} proctor snapshot`}
+                        className="aspect-video w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-video items-center justify-center px-4 text-center text-sm text-slate-300">
+                        No live camera preview yet
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="panel-soft p-3">
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Tab switches</p>
+                      <p className="mt-2 text-xl font-semibold text-slate-900">{attempt.proctoring?.tabSwitchCount || 0}</p>
+                    </div>
+                    <div className="panel-soft p-3">
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Window blurs</p>
+                      <p className="mt-2 text-xl font-semibold text-slate-900">{attempt.proctoring?.windowBlurCount || 0}</p>
+                    </div>
+                    <div className="panel-soft p-3">
+                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Mic activity</p>
+                      <p className="mt-2 text-xl font-semibold text-slate-900">{Math.round((attempt.proctoring?.micLevel || 0) * 100)}%</p>
+                    </div>
+                  </div>
+                </div>
+                {expandedAttemptId === attempt._id ? (
+                  <div className="mt-4 space-y-3 border-t border-[var(--border)] pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-slate-900">Submitted answers</p>
+                        <p className="text-sm text-slate-600">Review each response, the expected answer, and awarded marks.</p>
+                      </div>
+                      <Badge tone="neutral">{attempt.answers?.length || 0} response{(attempt.answers?.length || 0) === 1 ? "" : "s"}</Badge>
+                    </div>
+                    {attempt.answers?.length ? (
+                      [...attempt.answers]
+                        .sort((left, right) => {
+                          const leftQuestion = typeof left.question === "object" ? left.question : undefined;
+                          const rightQuestion = typeof right.question === "object" ? right.question : undefined;
+                          return Number(leftQuestion?.order || 0) - Number(rightQuestion?.order || 0);
+                        })
+                        .map((answer, index) => {
+                          const question = typeof answer.question === "object" ? answer.question : undefined;
+                          return (
+                            <div key={`${attempt._id}-${question?._id || index}`} className="rounded-[16px] border border-[var(--border)] bg-[#fbfcfe] p-4">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="space-y-2">
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    Question {question?.order || index + 1}
+                                  </p>
+                                  <p className="text-sm leading-6 text-slate-700">
+                                    {question?.questionText || "Question text unavailable"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                  <Badge tone={answer.isCorrect ? "success" : "warning"}>
+                                    {answer.isCorrect ? "Correct" : "Needs review"}
+                                  </Badge>
+                                  <Badge tone="info">
+                                    {answer.awardedMarks ?? 0} / {question?.marks ?? 0} marks
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                                <div className="panel-soft p-3">
+                                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Student answer</p>
+                                  <p className="mt-2 text-sm leading-6 text-slate-900">
+                                    {answer.answer === null || answer.answer === undefined || answer.answer === ""
+                                      ? "No answer submitted"
+                                      : String(answer.answer)}
+                                  </p>
+                                </div>
+                                <div className="panel-soft p-3">
+                                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Expected answer</p>
+                                  <p className="mt-2 text-sm leading-6 text-slate-900">
+                                    {question?.correctAnswer === null || question?.correctAnswer === undefined || question?.correctAnswer === ""
+                                      ? "Not available"
+                                      : String(question.correctAnswer)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                    ) : (
+                      <Alert variant="info">This attempt does not have any submitted answers to review yet.</Alert>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ))
+          ) : (
+            <Alert variant="info">
+              No submitted attempts yet for {selectedAssessment?.title || "this assessment"}.
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

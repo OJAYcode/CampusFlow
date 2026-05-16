@@ -157,7 +157,7 @@ export function AppShell({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <Badge tone="info" className="rounded-full px-2.5 py-1 text-[11px] sm:px-3 sm:py-1.5">
                   {currentRoleLabel}
                 </Badge>
@@ -169,21 +169,21 @@ export function AppShell({
             </div>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2 overflow-hidden text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b94aa] sm:text-[11px] sm:tracking-[0.18em]">
+              <div className="flex flex-wrap items-center gap-2 overflow-hidden text-[10px] font-medium uppercase tracking-[0.16em] text-[#8b94aa] sm:text-[11px] sm:tracking-[0.18em]">
                 <Link href={homeHref} className="transition hover:text-[#202c4b]">
                   {theme.shortLabel}
                 </Link>
                 <ChevronRight className="h-3.5 w-3.5" />
-                <span className="truncate">{currentLabel}</span>
+                <span className="min-w-0 break-words">{currentLabel}</span>
               </div>
               <div className="mt-2.5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
-                  <h1 className="text-[1.28rem] font-semibold tracking-[-0.04em] text-[#202c4b] sm:text-[1.5rem] md:truncate md:text-[1.75rem]">
+                  <h1 className="break-words text-[1.28rem] font-semibold tracking-[-0.04em] text-[#202c4b] sm:text-[1.5rem] md:text-[1.75rem]">
                     {title}
                   </h1>
-                  <p className="mt-1 max-w-2xl text-[12px] leading-5 text-[#5d6882] sm:max-w-3xl sm:text-sm sm:leading-6 md:line-clamp-2 lg:line-clamp-none">{subtitle}</p>
+                  <p className="mt-1 max-w-2xl break-words text-[12px] leading-5 text-[#5d6882] sm:max-w-3xl sm:text-sm sm:leading-6 md:line-clamp-2 lg:line-clamp-none">{subtitle}</p>
                 </div>
-                <div className="self-start rounded-full border border-[rgba(37,90,200,0.14)] bg-[rgba(37,90,200,0.06)] px-2.5 py-1 text-[11px] font-medium text-[#255ac8] sm:px-3 sm:py-1.5 sm:text-xs">
+                <div className="hidden self-start rounded-full border border-[rgba(37,90,200,0.14)] bg-[rgba(37,90,200,0.06)] px-2.5 py-1 text-[11px] font-medium text-[#255ac8] sm:inline-flex sm:max-w-full sm:break-words sm:px-3 sm:py-1.5 sm:text-xs">
                   {currentLabel}
                 </div>
               </div>

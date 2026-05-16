@@ -16,9 +16,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-9 px-3.5 text-[13px] md:h-8",
-  md: "h-10 px-4 text-sm md:h-[38px]",
-  lg: "h-10 px-5 text-sm",
+  sm: "min-h-9 px-3.5 py-2 text-[13px] md:min-h-8",
+  md: "min-h-10 px-4 py-2 text-sm md:min-h-[38px]",
+  lg: "min-h-10 px-5 py-2.5 text-sm",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -39,7 +39,7 @@ export function Button({
   return (
     <Comp
       className={cn(
-        "inline-flex items-center justify-center rounded-[var(--radius)] font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex max-w-full items-center justify-center rounded-[var(--radius)] text-center font-medium leading-tight whitespace-normal break-words transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-50",
         variantStyles[variant],
         sizeStyles[size],
         className,

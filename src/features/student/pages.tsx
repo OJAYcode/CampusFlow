@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Camera, ExternalLink, GraduationCap, LoaderCircle, Mic, PlayCircle, ShieldCheck, TimerReset, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -378,7 +379,7 @@ export function StudentElectivesPage() {
         description="Choose from the electives available to your department and level."
       />
       <PageControlCard>
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
           <Alert>
             You can only request electives that match your current department and level.
           </Alert>
@@ -1527,6 +1528,7 @@ export function StudentAssessmentAttemptsPage() {
 
 export function StudentAttendancePage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const sessions = useQuery({
     queryKey: ["student", "active-sessions"],
     queryFn: studentApi.activeSessions,
@@ -1539,8 +1541,6 @@ export function StudentAttendancePage() {
   const [status, setStatus] = useState<string>("");
   const [joinStatus, setJoinStatus] = useState<string>("");
   const [position, setPosition] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
-  const [successOpen, setSuccessOpen] = useState(false);
-  const [submittedSessionLabel, setSubmittedSessionLabel] = useState("");
 
   const getLocation = async () => {
     try {
@@ -1572,8 +1572,7 @@ export function StudentAttendancePage() {
         ...fingerprint,
       });
       const activeSession = (sessions.data?.data || []).find((session) => session._id === sessionId);
-      setSubmittedSessionLabel(activeSession?.course?.title || activeSession?.sessionCode || "your session");
-      setSuccessOpen(true);
+      const submittedSessionLabel = activeSession?.course?.title || activeSession?.sessionCode || "your session";
       setJoinStatus("Attendance submitted successfully. Your submission is now recorded on the lecturer live session map.");
       setSessionId("");
       setSessionCode("");
@@ -1581,6 +1580,7 @@ export function StudentAttendancePage() {
       setStatus("");
       await queryClient.invalidateQueries({ queryKey: ["student", "attendance-history"] });
       await queryClient.invalidateQueries({ queryKey: ["student", "active-sessions"] });
+      router.push(`/student/attendance/submitted?session=${encodeURIComponent(submittedSessionLabel)}`);
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -1623,32 +1623,6 @@ export function StudentAttendancePage() {
 
   return (
     <div className="space-y-6">
-      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
-        <DialogContent className="w-[95vw] max-w-md">
-          <DialogHeader>
-            <DialogTitle>Attendance submitted</DialogTitle>
-            <DialogDescription>
-              Your attendance for {submittedSessionLabel || "this session"} has been recorded successfully.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Alert variant="success">
-              You can close this message and continue, or open your attendance history to confirm the recorded submission.
-            </Alert>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="secondary" onClick={() => setSuccessOpen(false)}>
-                Close
-              </Button>
-              <Button asChild>
-                <Link href="/student/attendance/history" onClick={() => setSuccessOpen(false)}>
-                  Open attendance history
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <PageIntro
         kicker="Attendance"
         title="Attendance submission"
@@ -1726,6 +1700,38 @@ export function StudentAttendancePage() {
         </CardContent>
       </Card>
       </div>
+    </div>
+  );
+}
+
+export function StudentAttendanceSubmittedPage({ sessionLabel }: { sessionLabel?: string }) {
+  return (
+    <div className="space-y-6">
+      <PageIntro
+        kicker="Attendance"
+        title="Attendance submitted"
+        description={`Your attendance for ${sessionLabel || "this session"} has been recorded successfully.`}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Submission recorded</CardTitle>
+          <CardDescription>The lecturer can now see this submission in the live attendance session and attendance history.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="success">
+            Attendance was submitted successfully. You can review your history or return to the attendance workspace.
+          </Alert>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button asChild>
+              <Link href="/student/attendance/history">Open attendance history</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/student/attendance">Back to attendance</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

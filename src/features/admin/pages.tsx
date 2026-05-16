@@ -2698,7 +2698,7 @@ export function AdminReportsPage() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <LabeledField label="Course filter">
             <select
-              className="portal-select min-w-[18rem]"
+              className="portal-select min-w-0"
               value={courseId}
               onChange={(event) => setCourseId(event.target.value)}
             >
