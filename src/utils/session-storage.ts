@@ -26,17 +26,17 @@ export function getStoredSession(): StoredSession {
   }
 
   try {
-    const sessionSession = readSession(window.sessionStorage);
-    if (sessionSession.accessToken || sessionSession.refreshToken) {
-      return sessionSession;
+    const persistentSession = readSession(window.localStorage);
+    if (persistentSession.accessToken || persistentSession.refreshToken) {
+      return persistentSession;
     }
 
-    // Migrate older shared localStorage auth into the current tab only.
-    const legacyLocalSession = readSession(window.localStorage);
-    if (legacyLocalSession.accessToken || legacyLocalSession.refreshToken) {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(legacyLocalSession));
-      window.localStorage.removeItem(STORAGE_KEY);
-      return legacyLocalSession;
+    // Migrate older tab-only auth into persistent storage so sessions survive app restarts.
+    const legacySession = readSession(window.sessionStorage);
+    if (legacySession.accessToken || legacySession.refreshToken) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(legacySession));
+      window.sessionStorage.removeItem(STORAGE_KEY);
+      return legacySession;
     }
 
     return emptySession();
@@ -47,8 +47,8 @@ export function getStoredSession(): StoredSession {
 
 export function setStoredSession(session: StoredSession) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  window.sessionStorage.removeItem(STORAGE_KEY);
 }
 
 export function clearStoredSession() {
