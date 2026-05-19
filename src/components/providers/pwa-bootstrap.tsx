@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+
+import { ensurePushSubscription, registerPortalServiceWorker } from "@/src/lib/push-notifications";
+import { getStoredSession } from "@/src/utils/session-storage";
 
 declare global {
   interface WindowEventMap {
@@ -16,17 +20,15 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaBootstrap() {
-  useEffect(() => {
-    // Prevent multiple registrations
-    let registered = false;
+  const pathname = usePathname();
 
-    // Register service worker
-    if (typeof window !== "undefined" && "serviceWorker" in navigator && !registered) {
-      registered = true;
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      void registerPortalServiceWorker()
         .then((registration) => {
-          console.log("Service Worker registered:", registration);
+          if (registration) {
+            console.log("Service Worker registered:", registration);
+          }
         })
         .catch((err) => {
           console.debug("Service Worker registration failed:", err);
@@ -44,6 +46,23 @@ export function PwaBootstrap() {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const { accessToken } = getStoredSession();
+    if (!accessToken) return;
+
+    const portal = pathname.startsWith("/staff") ? "staff" : pathname.startsWith("/student") ? "student" : null;
+    if (!portal) return;
+
+    void ensurePushSubscription(portal).then((result) => {
+      if (!result.enabled) {
+        console.debug("Push subscription sync skipped:", result.reason);
+      }
+    });
+  }, [pathname]);
 
   return null;
 }

@@ -1677,7 +1677,7 @@ export function LecturerAnnouncementsPage() {
       if (result.enabled) {
         toast.success("Staff notifications enabled");
       } else {
-        toast.error(result.reason === "push not configured" ? "Push notifications are not configured on the server yet." : "Notifications could not be enabled on this device.");
+        toast.error(result.reason === "push_not_configured" ? "Push notifications are not configured on the server yet." : "Notifications could not be enabled on this device.");
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
