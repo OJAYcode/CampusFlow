@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable simple-import-sort/imports */
 import { LogOut, User2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,8 +16,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 type SidebarIcon = React.ComponentType<{ className?: string }>;
@@ -60,7 +59,11 @@ export function AppSidebar({
   ...props
 }: AppSidebarProps) {
   const pathname = usePathname() ?? "";
-  const isMobile = useIsMobile();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeMobile = React.useCallback(() => {
+    if (isMobile) setOpenMobile(false);
+  }, [isMobile, setOpenMobile]);
 
   const isActive = React.useCallback(
     (href: string) => pathname === href || pathname.startsWith(`${href}/`),
@@ -81,7 +84,7 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip={portalName} className="h-auto min-h-12 rounded-2xl px-3 py-2">
-              <Link href={homeHref}>
+              <Link href={homeHref} onClick={closeMobile}>
                 <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
                   <span className="text-[11px] font-semibold tracking-[0.16em]">{monogram}</span>
                 </div>
@@ -123,7 +126,7 @@ export function AppSidebar({
                           active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground",
                         )}
                       >
-                        <Link href={item.href}>
+                        <Link href={item.href} onClick={closeMobile}>
                           <Icon className={cn("size-4", active ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70")} />
                           <span>{item.label}</span>
                         </Link>

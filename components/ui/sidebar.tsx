@@ -2,19 +2,14 @@
 
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { AnimatePresence, motion } from "framer-motion"
 import { PanelLeft } from "lucide-react"
 import * as React from "react"
+import * as ReactDOM from "react-dom"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -162,6 +157,93 @@ const SidebarProvider = React.forwardRef<
 )
 SidebarProvider.displayName = "SidebarProvider"
 
+// Mobile drawer powered by framer-motion's AnimatePresence so enter/exit
+// animations are handled reliably. Rendered into a portal so it sits above
+// all page content.
+function MobileDrawer({
+  open,
+  onClose,
+  side = "left",
+  children,
+}: {
+  open: boolean
+  onClose: () => void
+  side?: "left" | "right"
+  children: React.ReactNode
+}) {
+  const isLeft = side !== "right"
+  const hiddenX = isLeft ? "-100%" : "100%"
+
+  // Lock body scroll while the drawer is open
+  React.useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [open])
+
+  // Close on Escape
+  React.useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open, onClose])
+
+  if (typeof document === "undefined") return null
+
+  return ReactDOM.createPortal(
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            onClick={onClose}
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 49,
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          />
+          <motion.div
+            key="panel"
+            initial={{ x: hiddenX }}
+            animate={{ x: 0 }}
+            exit={{ x: hiddenX }}
+            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            data-sidebar="sidebar"
+            data-mobile="true"
+            style={{
+              position: "fixed",
+              top: 0,
+              bottom: 0,
+              [isLeft ? "left" : "right"]: 0,
+              width: SIDEBAR_WIDTH_MOBILE,
+              zIndex: 50,
+              boxShadow: isLeft
+                ? "8px 0 24px rgba(0,0,0,0.18)"
+                : "-8px 0 24px rgba(0,0,0,0.18)",
+            }}
+          >
+            {children}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
+  )
+}
+
 const Sidebar = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -201,26 +283,11 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-          <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-60 bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-                width: SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-            side={side}
-          >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-            </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetContent>
-        </Sheet>
+        <MobileDrawer open={openMobile} onClose={() => setOpenMobile(false)} side={side}>
+          <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
+            {children}
+          </div>
+        </MobileDrawer>
       )
     }
 
