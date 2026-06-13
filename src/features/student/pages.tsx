@@ -3,7 +3,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Camera, ExternalLink, GraduationCap, LoaderCircle, Mic, PlayCircle, ShieldCheck, TimerReset, TriangleAlert } from "lucide-react";
+import { BookOpen, Camera, ExternalLink, GraduationCap, LoaderCircle, Mic, Paperclip, PlayCircle, ShieldCheck, TimerReset, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -665,6 +665,51 @@ export function StudentAssignmentsPage() {
   );
 }
 
+function getAttachmentName(url: string, index: number) {
+  try {
+    const pathname = decodeURIComponent(new URL(url, "http://x").pathname);
+    const last = pathname.split("/").pop() || "";
+    // Stored uploads are prefixed with a timestamp like "1777112985628-Name.ext"
+    const withoutPrefix = last.replace(/^\d{10,}-/, "");
+    return withoutPrefix || last || `Attachment ${index + 1}`;
+  } catch {
+    return `Attachment ${index + 1}`;
+  }
+}
+
+function AssignmentAttachments({ attachments }: { attachments?: string[] }) {
+  const files = (attachments || []).filter(Boolean);
+  if (!files.length) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-[15px]">
+          <Paperclip className="h-4 w-4 text-[#255ac8]" />
+          Assignment files
+        </CardTitle>
+        <CardDescription>Open the brief and any resources shared by your lecturer.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          {files.map((fileUrl, index) => {
+            const name = getAttachmentName(fileUrl, index);
+            return (
+              <FileLauncher
+                key={`${fileUrl}-${index}`}
+                fileUrl={fileUrl}
+                fileName={name}
+                title={name}
+                triggerLabel={name}
+              />
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: string }) {
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -700,6 +745,7 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
           </div>
         }
       />
+      <AssignmentAttachments attachments={assignment.data?.data.attachmentUrls} />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
         {!isMobile && (
           <Card className="hidden md:block">
@@ -709,6 +755,9 @@ export function StudentAssignmentDetailPage({ assignmentId }: { assignmentId: st
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm leading-7 text-slate-600">{assignment.data?.data.description || "No description provided."}</p>
+          {assignment.data?.data.instructions ? (
+            <p className="whitespace-pre-line text-sm leading-7 text-slate-600">{assignment.data.data.instructions}</p>
+          ) : null}
           <Alert variant="info">Due {formatDate(assignment.data?.data.dueDate, true)}</Alert>
           </CardContent>
         </Card>
