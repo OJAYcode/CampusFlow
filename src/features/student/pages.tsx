@@ -522,7 +522,7 @@ export function StudentMaterialsPage() {
           <div className="space-y-1">
             <p className="heading-kicker text-[#255ac8]">Registered courses</p>
             <h3 className="text-[1.15rem] font-semibold tracking-[-0.03em] text-[#202c4b]">Your course materials</h3>
-            <p className="text-sm leading-6 text-[#667085]">Files from your approved courses only.</p>
+            <p className="page-subtext text-sm leading-6 text-[#667085]">Files from your approved courses only.</p>
           </div>
           <Badge tone="neutral">{filtered.length} visible</Badge>
         </div>
@@ -554,7 +554,7 @@ export function StudentMaterialsPage() {
           <div className="space-y-1">
             <p className="heading-kicker text-[#255ac8]">Online references</p>
             <h3 className="text-[1.15rem] font-semibold tracking-[-0.03em] text-[#202c4b]">Related public resources</h3>
-            <p className="text-sm leading-6 text-[#667085]">Search titles for public books and references.</p>
+            <p className="page-subtext text-sm leading-6 text-[#667085]">Search titles for public books and references.</p>
           </div>
           {shouldSearchOnline ? <Badge tone="info">{onlineResults.length} result{onlineResults.length === 1 ? "" : "s"}</Badge> : null}
         </div>

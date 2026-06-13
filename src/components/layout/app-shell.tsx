@@ -181,7 +181,7 @@ export function AppShell({
                   <h1 className="break-words text-[1.28rem] font-semibold tracking-[-0.04em] text-[#202c4b] sm:text-[1.5rem] md:text-[1.75rem]">
                     {title}
                   </h1>
-                  <p className="mt-1 max-w-2xl break-words text-[12px] leading-5 text-[#5d6882] sm:max-w-3xl sm:text-sm sm:leading-6 md:line-clamp-2 lg:line-clamp-none">{subtitle}</p>
+                  <p className="page-subtext mt-1 max-w-2xl break-words text-[12px] leading-5 text-[#5d6882] sm:max-w-3xl sm:text-sm sm:leading-6 md:line-clamp-2 lg:line-clamp-none">{subtitle}</p>
                 </div>
                 <div className="hidden self-start rounded-full border border-[rgba(37,90,200,0.14)] bg-[rgba(37,90,200,0.06)] px-2.5 py-1 text-[11px] font-medium text-[#255ac8] sm:inline-flex sm:max-w-full sm:break-words sm:px-3 sm:py-1.5 sm:text-xs">
                   {currentLabel}

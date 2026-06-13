@@ -430,3 +430,14 @@ p {
     stroke-opacity: 0.18;
   }
 }
+
+/* Decorative description text — hidden on mobile to reduce clutter,
+   shown from the `sm` breakpoint (640px) upward. */
+.page-subtext {
+  display: none;
+}
+@media (min-width: 640px) {
+  .page-subtext {
+    display: block;
+  }
+}

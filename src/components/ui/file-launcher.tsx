@@ -53,15 +53,11 @@ export function FileLauncher({
   fileName,
   title,
   triggerLabel = "Open file",
-  size = "sm",
-  variant = "secondary",
 }: {
   fileUrl?: string | null;
   fileName?: string;
   title?: string;
   triggerLabel?: string;
-  size?: "sm" | "md" | "lg";
-  variant?: "primary" | "secondary" | "ghost" | "danger";
 }) {
   const [open, setOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState("");
@@ -148,24 +144,30 @@ export function FileLauncher({
 
   return (
     <>
-      <Button size={size} variant={variant} className="gap-2" onClick={() => setOpen(true)}>
-        <Eye className="h-4 w-4 shrink-0" />
-        {triggerLabel}
-      </Button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(37,90,200,0.16)] bg-[linear-gradient(180deg,#ffffff,#f5f8ff)] px-3.5 py-2.5 text-[13px] font-semibold text-[#255ac8] shadow-[0_1px_2px_rgba(15,37,71,0.06)] transition-all duration-200 hover:border-[rgba(37,90,200,0.32)] hover:bg-[#eef3ff] hover:shadow-[0_4px_12px_rgba(37,90,200,0.14)] active:scale-[0.98] sm:w-auto"
+      >
+        <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[rgba(37,90,200,0.1)] text-[#255ac8] transition-colors duration-200 group-hover:bg-[#255ac8] group-hover:text-white">
+          <Eye className="h-3.5 w-3.5" />
+        </span>
+        <span className="truncate">{triggerLabel}</span>
+      </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-6xl overflow-hidden p-0 pr-0">
-          <div className="border-b border-[var(--border)] px-5 py-4 sm:px-6">
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-6xl overflow-hidden p-0 sm:w-[calc(100vw-3rem)]">
+          <div className="border-b border-[var(--border)] px-4 py-3.5 sm:px-6 sm:py-4">
             <DialogHeader className="mb-0">
-              <DialogTitle>{title || fileName || "File viewer"}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="truncate pr-8 text-[15px] sm:text-base">{title || fileName || "File viewer"}</DialogTitle>
+              <DialogDescription className="text-[12px] sm:text-sm">
                 View the file without leaving the portal.
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          <div className="space-y-4 px-5 py-4 sm:px-6 sm:py-5">
-            <div className="h-[min(68vh,720px)] overflow-hidden rounded-[18px] border border-[var(--border)] bg-[#f8fafc]">
+          <div className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-6 sm:py-5">
+            <div className="h-[min(62vh,720px)] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#f8fafc] sm:h-[min(68vh,720px)] sm:rounded-[18px]">
               {previewKind === "image" ? (
                 <div className="flex h-full min-h-[320px] items-center justify-center bg-[#f8fafc] p-4">
                   <img src={resolvedUrl} alt={fileName || "Preview"} className="max-h-full w-auto max-w-full rounded-[12px] object-contain" />
@@ -256,7 +258,7 @@ export function FileLauncher({
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" className="w-full sm:w-auto">
                 <a href={resolvedUrl} target="_blank" rel="noreferrer noopener">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Open in new tab
