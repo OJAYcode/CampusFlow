@@ -17,6 +17,7 @@ import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Input } from "@/src/components/ui/input";
 import { PageIntro } from "@/src/components/ui/page-intro";
+import { RadiusSlider } from "@/src/components/ui/radius-slider";
 import { StatCard } from "@/src/components/ui/stat-card";
 import type { AttendanceStudentPoint } from "@/src/components/ui/attendance-geofence-map";
 import type { ApiEnvelope, AttendanceSessionLiveView, Course } from "@/src/types/domain";
@@ -427,7 +428,13 @@ export function LecturerAttendancePage() {
                       <Input type="number" min="5" max="180" value={form.durationMinutes} onChange={(event) => setForm((current) => ({ ...current, durationMinutes: event.target.value }))} />
                     </LabeledField>
                     <LabeledField label="Attendance radius (meters)">
-                      <Input type="number" min="5" max="5000" value={form.radius} onChange={(event) => setForm((current) => ({ ...current, radius: event.target.value }))} />
+                      <RadiusSlider
+                        min={5}
+                        max={1000}
+                        step={5}
+                        value={Number(form.radius || 50)}
+                        onChange={(next) => setForm((current) => ({ ...current, radius: String(next) }))}
+                      />
                     </LabeledField>
                   </div>
                   <LabeledField label="Building / room label">

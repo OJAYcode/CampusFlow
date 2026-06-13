@@ -441,3 +441,42 @@ p {
     display: block;
   }
 }
+
+/* Radius slider — volume-style draggable lever (native range input) */
+.radius-slider__input {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+.radius-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  width: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #255ac8;
+  box-shadow: 0 4px 12px rgba(37, 90, 200, 0.35);
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.radius-slider__input::-webkit-slider-thumb:hover {
+  transform: scale(1.08);
+}
+.radius-slider__input:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.14);
+  box-shadow: 0 6px 16px rgba(37, 90, 200, 0.45);
+}
+.radius-slider__input::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #255ac8;
+  box-shadow: 0 4px 12px rgba(37, 90, 200, 0.35);
+  cursor: grab;
+}
+.radius-slider__input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(37, 90, 200, 0.25);
+}

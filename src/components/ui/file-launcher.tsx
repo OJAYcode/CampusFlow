@@ -93,7 +93,11 @@ export function FileLauncher({
       try {
         const response = await fetch(resolvedUrl);
         if (!response.ok) {
-          throw new Error("The file could not be loaded.");
+          throw new Error(
+            response.status === 404
+              ? "This file isn't available on the server. Use “Open in new tab” to try the original link."
+              : "The file could not be loaded. Use “Open in new tab” to open it directly.",
+          );
         }
 
         if (previewKind === "docx") {
@@ -258,7 +262,7 @@ export function FileLauncher({
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button asChild variant="secondary" className="w-full sm:w-auto">
+              <Button asChild variant={previewError ? "primary" : "secondary"} className="w-full sm:w-auto">
                 <a href={resolvedUrl} target="_blank" rel="noreferrer noopener">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Open in new tab
