@@ -27,8 +27,17 @@ function getFileExtension(url: string) {
   }
 }
 
-function getPreviewKind(url: string) {
-  const extension = getFileExtension(url);
+function getExtensionFromName(name?: string) {
+  if (!name) return "";
+  const clean = name.split("?")[0].split("#")[0];
+  const last = clean.split(".").pop();
+  return last && last !== clean ? last.toLowerCase() : "";
+}
+
+function getPreviewKind(url: string, fileName?: string) {
+  // Cloud storage (e.g. Cloudinary "raw") URLs don't always end in the file
+  // extension, so prefer the original file name's extension when available.
+  const extension = getExtensionFromName(fileName) || getFileExtension(url);
   if (IMAGE_EXTENSIONS.has(extension)) return "image";
   if (VIDEO_EXTENSIONS.has(extension)) return "video";
   if (AUDIO_EXTENSIONS.has(extension)) return "audio";
@@ -66,16 +75,21 @@ export function FileLauncher({
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const resolvedUrl = resolveFileUrl(fileUrl);
-  const previewKind = useMemo(() => (resolvedUrl ? getPreviewKind(resolvedUrl) : "document"), [resolvedUrl]);
+  const previewKind = useMemo(() => (resolvedUrl ? getPreviewKind(resolvedUrl, fileName) : "document"), [resolvedUrl, fileName]);
   const isLocalFile = useMemo(() => usesLocalHost(resolvedUrl), [resolvedUrl]);
   const officeEmbedUrl = useMemo(
     () => (resolvedUrl ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(resolvedUrl)}` : ""),
     [resolvedUrl],
   );
 
+  // Render PDFs/unknown docs through a fetched blob so providers that send
+  // Content-Disposition: attachment (e.g. Cloudinary raw) still display inline
+  // instead of triggering a download and leaving a blank iframe.
+  const usesBlobPreview = previewKind === "pdf" || previewKind === "document";
+
   useEffect(() => {
     if (!open || !resolvedUrl) return;
-    if (previewKind !== "docx" && previewKind !== "text" && !(isLocalFile && (previewKind === "pdf" || previewKind === "document"))) {
+    if (previewKind !== "docx" && previewKind !== "text" && !usesBlobPreview) {
       setDocxHtml("");
       setTextContent("");
       setBlobPreviewUrl("");
@@ -106,9 +120,15 @@ export function FileLauncher({
           if (!cancelled) {
             setDocxHtml(result.value || "<p>No preview content was returned.</p>");
           }
-        } else if (isLocalFile && (previewKind === "pdf" || previewKind === "document")) {
+        } else if (usesBlobPreview) {
           const blob = await response.blob();
-          const objectUrl = URL.createObjectURL(blob);
+          // Force a PDF content-type so the browser renders it inline even when
+          // the provider served it as application/octet-stream.
+          const typedBlob =
+            previewKind === "pdf" && blob.type !== "application/pdf"
+              ? new Blob([blob], { type: "application/pdf" })
+              : blob;
+          const objectUrl = URL.createObjectURL(typedBlob);
           if (!cancelled) {
             setBlobPreviewUrl(objectUrl);
           } else {
@@ -227,7 +247,7 @@ export function FileLauncher({
                   <p>Local Office files like this cannot be embedded through the online viewer from `localhost`.</p>
                   <p className="text-sm">DOCX files now open in-app directly, but spreadsheets and slide decks still need a new-tab fallback in local development.</p>
                 </div>
-              ) : isLocalFile && (previewKind === "pdf" || previewKind === "document") ? (
+              ) : usesBlobPreview ? (
                 loadingPreview ? (
                   <div className="flex h-full min-h-[320px] items-center justify-center gap-3 text-slate-600">
                     <LoaderCircle className="h-5 w-5 animate-spin" />
