@@ -2,9 +2,10 @@
 
 /* eslint-disable simple-import-sort/imports */
 import mammoth from "mammoth";
-import { AlertCircle, ExternalLink, Eye, LoaderCircle } from "lucide-react";
+import { AlertCircle, ExternalLink, Eye, FileText, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import { resolveFileUrl } from "@/src/utils/files";
@@ -68,6 +69,7 @@ export function FileLauncher({
   title?: string;
   triggerLabel?: string;
 }) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [docxHtml, setDocxHtml] = useState("");
   const [textContent, setTextContent] = useState("");
@@ -82,10 +84,15 @@ export function FileLauncher({
     [resolvedUrl],
   );
 
+  // Mobile browsers (iOS Safari / Android Chrome) cannot render PDFs/documents
+  // inside an iframe — they show a blank or broken area. On mobile we skip the
+  // embed entirely and offer an "Open file" action instead.
+  const cannotEmbedDocOnMobile = isMobile && (previewKind === "pdf" || previewKind === "document");
+
   // Render PDFs/unknown docs through a fetched blob so providers that send
   // Content-Disposition: attachment (e.g. Cloudinary raw) still display inline
   // instead of triggering a download and leaving a blank iframe.
-  const usesBlobPreview = previewKind === "pdf" || previewKind === "document";
+  const usesBlobPreview = (previewKind === "pdf" || previewKind === "document") && !cannotEmbedDocOnMobile;
 
   useEffect(() => {
     if (!open || !resolvedUrl) return;
@@ -192,7 +199,25 @@ export function FileLauncher({
 
           <div className="space-y-3 px-3 py-3 sm:space-y-4 sm:px-6 sm:py-5">
             <div className="h-[min(62vh,720px)] overflow-hidden rounded-[14px] border border-[var(--border)] bg-[#f8fafc] sm:h-[min(68vh,720px)] sm:rounded-[18px]">
-              {previewKind === "image" ? (
+              {cannotEmbedDocOnMobile ? (
+                <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 px-6 text-center">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-[rgba(37,90,200,0.1)] text-[#255ac8]">
+                    <FileText className="h-7 w-7" />
+                  </span>
+                  <div className="space-y-1">
+                    <p className="text-[15px] font-semibold text-[#202c4b]">Preview not supported on mobile</p>
+                    <p className="mx-auto max-w-xs text-[13px] leading-5 text-[#667085]">
+                      Phone browsers can&rsquo;t display this file type inline. Tap below to open it.
+                    </p>
+                  </div>
+                  <Button asChild className="w-full max-w-xs">
+                    <a href={resolvedUrl} target="_blank" rel="noreferrer noopener">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open file
+                    </a>
+                  </Button>
+                </div>
+              ) : previewKind === "image" ? (
                 <div className="flex h-full min-h-[320px] items-center justify-center bg-[#f8fafc] p-4">
                   <img src={resolvedUrl} alt={fileName || "Preview"} className="max-h-full w-auto max-w-full rounded-[12px] object-contain" />
                 </div>
