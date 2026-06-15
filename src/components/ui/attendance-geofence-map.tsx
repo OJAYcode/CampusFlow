@@ -15,9 +15,9 @@ L.Icon.Default.mergeOptions({
 
 const lecturerIcon = new L.DivIcon({
   className: "custom-lecturer-pin",
-  html: '<div style="display:flex;height:18px;width:18px;align-items:center;justify-content:center;border-radius:999px;background:#255ac8;border:3px solid #ffffff;box-shadow:0 8px 18px rgba(37,90,200,0.32)"></div>',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
+  html: '<div class="geofence-command-pin"><span class="geofence-command-core"></span></div>',
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
 });
 
 const insideIcon = new L.DivIcon({
@@ -68,28 +68,51 @@ function MapUpdater({
   return null;
 }
 
-function createEllipsePoints(
+function metersToLatLng(
+  latitude: number,
+  longitude: number,
+  offsetXMeters: number,
+  offsetYMeters: number,
+): [number, number] {
+  const metersPerDegreeLatitude = 111320;
+  const metersPerDegreeLongitude = 111320 * Math.cos((latitude * Math.PI) / 180);
+  return [
+    latitude + offsetYMeters / metersPerDegreeLatitude,
+    longitude + offsetXMeters / Math.max(metersPerDegreeLongitude, 1),
+  ];
+}
+
+// A pie-slice wedge from the centre, used as the rotating radar sweep.
+function createSweepWedge(
   latitude: number,
   longitude: number,
   radius: number,
-  radiusYMultiplier = 0.72,
-  pointCount = 72,
+  spreadDegrees: number,
+  pointCount = 16,
 ): Array<[number, number]> {
-  const metersPerDegreeLatitude = 111320;
-  const metersPerDegreeLongitude = 111320 * Math.cos((latitude * Math.PI) / 180);
-  const radiusX = radius;
-  const radiusY = radius * radiusYMultiplier;
+  const half = (spreadDegrees * Math.PI) / 180 / 2;
+  const points: Array<[number, number]> = [[latitude, longitude]];
+  for (let i = 0; i <= pointCount; i += 1) {
+    const theta = -half + (2 * half * i) / pointCount;
+    points.push(
+      metersToLatLng(latitude, longitude, radius * Math.cos(theta), radius * Math.sin(theta)),
+    );
+  }
+  return points;
+}
 
-  return Array.from({ length: pointCount }, (_, index) => {
-    const theta = (2 * Math.PI * index) / pointCount;
-    const offsetX = radiusX * Math.cos(theta);
-    const offsetY = radiusY * Math.sin(theta);
-
-    return [
-      latitude + offsetY / metersPerDegreeLatitude,
-      longitude + offsetX / Math.max(metersPerDegreeLongitude, 1),
-    ];
-  });
+// Two perpendicular lines crossing the command point.
+function createCrosshair(latitude: number, longitude: number, reach: number) {
+  return {
+    horizontal: [
+      metersToLatLng(latitude, longitude, -reach, 0),
+      metersToLatLng(latitude, longitude, reach, 0),
+    ] as Array<[number, number]>,
+    vertical: [
+      metersToLatLng(latitude, longitude, 0, -reach),
+      metersToLatLng(latitude, longitude, 0, reach),
+    ] as Array<[number, number]>,
+  };
 }
 
 export interface AttendanceStudentPoint {
@@ -140,8 +163,17 @@ export function AttendanceGeofenceMap({
 }) {
   const center: [number, number] = [latitude, longitude];
   const [satelliteUnavailable, setSatelliteUnavailable] = useState(false);
-  const jurisdictionEllipse = createEllipsePoints(latitude, longitude, radius);
-  const jurisdictionPulse = createEllipsePoints(latitude, longitude, radius * 1.12, 0.76);
+
+  // Radar sweep wedge (a 50-degree fan from the centre) that we rotate via CSS.
+  const radarSweep = useMemo(
+    () => createSweepWedge(latitude, longitude, radius, 50),
+    [latitude, longitude, radius],
+  );
+  // Crosshair lines that extend just past the geofence boundary.
+  const crosshairLines = useMemo(
+    () => createCrosshair(latitude, longitude, radius * 1.04),
+    [latitude, longitude, radius],
+  );
   const renderedStudentPoints = useMemo(() => {
     const grouped = new Map<string, AttendanceStudentPoint[]>();
 
@@ -216,37 +248,60 @@ export function AttendanceGeofenceMap({
           </Popup>
         </Marker>
 
+        {/* Tactical geofence: filled jurisdiction zone */}
         <Circle
           center={center}
           radius={radius}
-          pathOptions={{ color: "#255ac8", fillColor: "#255ac8", fillOpacity: 0.12, weight: 3 }}
+          pathOptions={{
+            color: "#19c37d",
+            fillColor: "#19c37d",
+            fillOpacity: 0.08,
+            weight: 2,
+            className: "geofence-zone",
+          }}
+        />
+        {/* Concentric range rings */}
+        <Circle
+          center={center}
+          radius={Math.max(radius * 0.66, 4)}
+          pathOptions={{ color: "#19c37d", fillColor: "transparent", opacity: 0.35, weight: 1, dashArray: "2 8" }}
         />
         <Circle
           center={center}
-          radius={Math.max(radius * 0.5, 5)}
-          pathOptions={{ color: "#23a148", fillColor: "transparent", opacity: 0.45, weight: 1, dashArray: "4 6" }}
+          radius={Math.max(radius * 0.33, 3)}
+          pathOptions={{ color: "#19c37d", fillColor: "transparent", opacity: 0.3, weight: 1, dashArray: "2 8" }}
         />
-        <Polygon
-          positions={jurisdictionEllipse}
+        {/* Outer boundary ring (bright) */}
+        <Circle
+          center={center}
+          radius={radius}
           pathOptions={{
-            color: "#255ac8",
-            fillColor: "#255ac8",
-            fillOpacity: 0.05,
-            weight: 2,
-            className: "attendance-jurisdiction-oval",
-          }}
-        />
-        <Polygon
-          positions={jurisdictionPulse}
-          pathOptions={{
-            color: "#255ac8",
+            color: "#3df5a4",
             fillColor: "transparent",
-            fillOpacity: 0,
-            weight: 2,
-            opacity: 0.35,
-            dashArray: "10 12",
-            className: "attendance-jurisdiction-pulse",
+            opacity: 0.9,
+            weight: 1.5,
+            className: "geofence-boundary",
           }}
+        />
+        {/* Sweeping radar arc */}
+        <Polygon
+          positions={radarSweep}
+          pathOptions={{
+            color: "transparent",
+            fillColor: "#19c37d",
+            fillOpacity: 0.16,
+            weight: 0,
+            className: "geofence-sweep",
+          }}
+        />
+        {/* Crosshair through the command point */}
+        <Polyline
+          positions={crosshairLines.horizontal}
+          pathOptions={{ color: "#19c37d", opacity: 0.4, weight: 1, dashArray: "3 7" }}
+        />
+        <Polyline
+          positions={crosshairLines.vertical}
+          pathOptions={{ color: "#19c37d", opacity: 0.4, weight: 1, dashArray: "3 7" }}
         />
 
         {renderedStudentPoints.map((student) => {

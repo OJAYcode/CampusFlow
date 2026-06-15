@@ -386,14 +386,42 @@ p {
   }
 }
 
-.attendance-jurisdiction-oval {
-  animation: attendance-oval-glow 2.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(37, 90, 200, 0.24));
+/* ── Tactical command pin (lecturer position) ── */
+.geofence-command-pin {
+  position: relative;
+  height: 26px;
+  width: 26px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(61, 245, 164, 0.9);
+  background: radial-gradient(circle, rgba(25, 195, 125, 0.25), rgba(25, 195, 125, 0));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(25, 195, 125, 0.55);
+  animation: geofence-zone-glow 2.4s ease-in-out infinite;
+}
+.geofence-command-core {
+  height: 9px;
+  width: 9px;
+  border-radius: 9999px;
+  background: #3df5a4;
+  box-shadow: 0 0 8px rgba(61, 245, 164, 0.9);
 }
 
-.attendance-jurisdiction-pulse {
-  animation: attendance-oval-pulse 2s linear infinite;
+/* ── Tactical geofence (command-center radar look) ── */
+.geofence-zone {
+  filter: drop-shadow(0 0 8px rgba(25, 195, 125, 0.35));
+  animation: geofence-zone-glow 3s ease-in-out infinite;
+}
+.geofence-boundary {
+  filter: drop-shadow(0 0 6px rgba(61, 245, 164, 0.6));
+  animation: geofence-boundary-pulse 2.4s ease-in-out infinite;
+}
+.geofence-sweep {
   transform-origin: center;
+  transform-box: fill-box;
+  animation: geofence-radar-sweep 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(25, 195, 125, 0.5));
 }
 
 .scrollbar-gutter-stable {
@@ -405,29 +433,36 @@ p {
   overscroll-behavior: contain;
 }
 
-@keyframes attendance-oval-glow {
+@keyframes geofence-zone-glow {
   0%,
   100% {
-    stroke-opacity: 0.55;
-    fill-opacity: 0.04;
+    fill-opacity: 0.06;
+    stroke-opacity: 0.6;
   }
   50% {
-    stroke-opacity: 0.95;
-    fill-opacity: 0.11;
+    fill-opacity: 0.13;
+    stroke-opacity: 0.9;
   }
 }
 
-@keyframes attendance-oval-pulse {
-  0% {
-    stroke-dashoffset: 0;
-    stroke-opacity: 0.18;
+@keyframes geofence-boundary-pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.7;
+    stroke-width: 1.5;
   }
   50% {
-    stroke-opacity: 0.65;
+    stroke-opacity: 1;
+    stroke-width: 2.25;
   }
-  100% {
-    stroke-dashoffset: -44;
-    stroke-opacity: 0.18;
+}
+
+@keyframes geofence-radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -442,7 +477,7 @@ p {
   }
 }
 
-/* Radius slider — volume-style draggable lever (native range input) */
+/* Radius slider — compact draggable handle (native range input) */
 .radius-slider__input {
   -webkit-appearance: none;
   appearance: none;
@@ -451,32 +486,31 @@ p {
 .radius-slider__input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  height: 24px;
-  width: 24px;
+  height: 16px;
+  width: 16px;
   border-radius: 9999px;
-  background: #ffffff;
-  border: 3px solid #255ac8;
-  box-shadow: 0 4px 12px rgba(37, 90, 200, 0.35);
+  background: #255ac8;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(37, 90, 200, 0.4);
   cursor: grab;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .radius-slider__input::-webkit-slider-thumb:hover {
-  transform: scale(1.08);
+  transform: scale(1.12);
 }
 .radius-slider__input:active::-webkit-slider-thumb {
   cursor: grabbing;
-  transform: scale(1.14);
-  box-shadow: 0 6px 16px rgba(37, 90, 200, 0.45);
+  transform: scale(1.18);
 }
 .radius-slider__input::-moz-range-thumb {
-  height: 24px;
-  width: 24px;
+  height: 16px;
+  width: 16px;
   border-radius: 9999px;
-  background: #ffffff;
-  border: 3px solid #255ac8;
-  box-shadow: 0 4px 12px rgba(37, 90, 200, 0.35);
+  background: #255ac8;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(37, 90, 200, 0.4);
   cursor: grab;
 }
 .radius-slider__input:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px rgba(37, 90, 200, 0.25);
+  box-shadow: 0 0 0 4px rgba(37, 90, 200, 0.22);
 }

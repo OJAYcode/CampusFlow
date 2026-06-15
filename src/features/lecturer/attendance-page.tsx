@@ -431,7 +431,7 @@ export function LecturerAttendancePage() {
                       <RadiusSlider
                         min={5}
                         max={1000}
-                        step={5}
+                        step={1}
                         value={Number(form.radius || 50)}
                         onChange={(next) => setForm((current) => ({ ...current, radius: String(next) }))}
                       />

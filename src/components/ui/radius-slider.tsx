@@ -1,5 +1,6 @@
 "use client";
 
+import { Minus, Plus } from "lucide-react";
 import { useId } from "react";
 
 import { cn } from "@/src/utils/cn";
@@ -9,7 +10,7 @@ export function RadiusSlider({
   onChange,
   min = 5,
   max = 1000,
-  step = 5,
+  step = 1,
   unit = "m",
   className,
 }: {
@@ -25,23 +26,46 @@ export function RadiusSlider({
   const clamped = Math.min(Math.max(Number.isFinite(value) ? value : min, min), max);
   const percent = ((clamped - min) / (max - min)) * 100;
 
+  const nudge = (delta: number) => {
+    const next = Math.min(Math.max(clamped + delta, min), max);
+    if (next !== clamped) onChange(next);
+  };
+
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex items-end justify-between gap-3">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-semibold tracking-[-0.03em] text-[#202c4b] tabular-nums">{clamped}</span>
-          <span className="text-sm font-medium text-[#667085]">{unit}</span>
+    <div className={cn("space-y-2.5", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-baseline gap-1">
+          <span className="text-lg font-semibold tracking-[-0.02em] text-[#202c4b] tabular-nums">{clamped}</span>
+          <span className="text-xs font-medium text-[#8b95a7]">{unit}</span>
         </div>
-        <span className="rounded-full bg-[rgba(37,90,200,0.08)] px-2.5 py-1 text-[11px] font-medium text-[#255ac8]">
-          Drag to adjust
-        </span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => nudge(-step)}
+            disabled={clamped <= min}
+            aria-label={`Decrease by ${step}${unit}`}
+            className="grid size-7 place-items-center rounded-lg border border-[var(--border)] bg-white text-[#475067] transition hover:border-[#c5d8f4] hover:text-[#255ac8] disabled:opacity-40 disabled:hover:border-[var(--border)]"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => nudge(step)}
+            disabled={clamped >= max}
+            aria-label={`Increase by ${step}${unit}`}
+            className="grid size-7 place-items-center rounded-lg border border-[var(--border)] bg-white text-[#475067] transition hover:border-[#c5d8f4] hover:text-[#255ac8] disabled:opacity-40 disabled:hover:border-[var(--border)]"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
-      <div className="radius-slider relative h-6">
-        {/* Filled track up to the thumb */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 my-auto h-2 w-full rounded-full bg-[#e6ecf6]" />
+      <div className="relative h-4">
+        {/* Track */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 my-auto h-1.5 w-full rounded-full bg-[#e9eef6]" />
+        {/* Filled portion */}
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 my-auto h-2 rounded-full bg-[linear-gradient(90deg,#255ac8,#4f86f0)]"
+          className="pointer-events-none absolute inset-y-0 left-0 my-auto h-1.5 rounded-full bg-[#255ac8]"
           style={{ width: `${percent}%` }}
         />
         <input
@@ -57,7 +81,7 @@ export function RadiusSlider({
         />
       </div>
 
-      <div className="flex justify-between text-[11px] font-medium text-[#9aa3b5]">
+      <div className="flex justify-between text-[10px] font-medium text-[#aab2c2]">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
