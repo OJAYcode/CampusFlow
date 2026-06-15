@@ -13,6 +13,9 @@ type StatusMessage =
 
 interface RobustLocationOptions {
   onStatusChange?: (status: StatusMessage) => void;
+  // Streams each fix's accuracy (in metres) as GPS tightens, so the UI can show
+  // a live "locking on" indicator instead of a single end result.
+  onAccuracyUpdate?: (accuracyMeters: number) => void;
 }
 
 type GeolocationPositionOptions = PositionOptions;
@@ -31,18 +34,18 @@ const FALLBACK_OPTIONS: GeolocationPositionOptions = {
   maximumAge: 0,
 };
 
-// We keep sampling for up to this long, letting the GPS fix settle. The first
-// readings on a phone are coarse (network/wifi assisted); accuracy tightens as
-// satellites lock, so we wait for it to stabilise instead of grabbing the first
-// "good enough" value (which is what caused the pin to jump between captures).
-const SETTLE_WINDOW_MS = 9000;
-// Stop early as soon as we have a genuinely tight fix.
-const EXCELLENT_ACCURACY_METERS = 10;
-// A fix we are happy to return once the window ends.
-const GOOD_ACCURACY_METERS = 25;
+// We keep sampling for up to this long, letting the GPS fix settle. A phone's
+// first readings are coarse (network/wifi assisted, 20-100m); accuracy tightens
+// as satellites lock, which can take 15-25s from cold. Waiting this long is
+// what gets a real GPS fix instead of the coarse early one.
+const SETTLE_WINDOW_MS = 24000;
+// Stop early only on a genuinely tight satellite fix.
+const EXCELLENT_ACCURACY_METERS = 8;
+// A fix we are happy to return once two of them agree.
+const GOOD_ACCURACY_METERS = 18;
 // If two consecutive tight readings agree to within this distance, the fix has
 // stabilised and we can return immediately.
-const STABLE_AGREEMENT_METERS = 8;
+const STABLE_AGREEMENT_METERS = 6;
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -94,6 +97,7 @@ const getCurrentPositionWithOptions = (
 // spot land on (nearly) the same coordinates instead of drifting.
 const watchForStableFix = (
   onStatusChange?: (status: StatusMessage) => void,
+  onAccuracyUpdate?: (accuracyMeters: number) => void,
 ): Promise<LocationData> =>
   new Promise((resolve, reject) => {
     let finished = false;
@@ -122,6 +126,7 @@ const watchForStableFix = (
       (position) => {
         const reading = toLocationData(position);
         if (isDev) console.debug("[geo] reading", reading);
+        onAccuracyUpdate?.(reading.accuracy);
 
         if (!best || reading.accuracy < best.accuracy) {
           best = reading;
@@ -180,7 +185,7 @@ export const getRobustUserLocation = async (
 
   try {
     options.onStatusChange?.("Improving GPS accuracy...");
-    return await watchForStableFix(options.onStatusChange);
+    return await watchForStableFix(options.onStatusChange, options.onAccuracyUpdate);
   } catch (watchError) {
     const code = (watchError as { code?: number })?.code;
     // Permission denied / unavailable are terminal — surface them.
